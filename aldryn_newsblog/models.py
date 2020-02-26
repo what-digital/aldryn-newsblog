@@ -262,8 +262,7 @@ class Article(TranslatedAutoSlugifyMixin,
             return self.safe_translation_getter('title', any_language=True)
         except ValueError:
             default_language = settings.LANGUAGE_CODE
-            translation.activate(default_language)
-            return self.safe_translation_getter('title', any_language=True)
+            return self.safe_translation_getter('title', language_code=default_language, any_language=True)
 
 
 class PluginEditModeMixin(object):
