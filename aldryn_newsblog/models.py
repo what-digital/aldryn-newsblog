@@ -10,6 +10,7 @@ from django.db import connection, models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
+from django.utils import translation
 from django.utils.encoding import force_text, python_2_unicode_compatible
 from django.utils.timezone import now
 from django.utils.translation import override, ugettext
@@ -257,7 +258,12 @@ class Article(TranslatedAutoSlugifyMixin,
         super(Article, self).save(*args, **kwargs)
 
     def __str__(self):
-        return self.safe_translation_getter('title', any_language=True)
+        try:
+            return self.safe_translation_getter('title', any_language=True)
+        except ValueError:
+            default_language = settings.LANGUAGE_CODE
+            translation.activate(default_language)
+            return self.safe_translation_getter('title', any_language=True)
 
 
 class PluginEditModeMixin(object):
