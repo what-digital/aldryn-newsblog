@@ -9,7 +9,7 @@ from aldryn_newsblog.views import (
 
 
 urlpatterns = [
-    url(r'^', ArticleList.as_view(), name='article-list'),
+    url(r'^$', ArticleList.as_view(), name='article-list'),
     url(r'^feed/', LatestArticlesFeed(), name='article-list-feed'),
 
     url(r'^search/',
