@@ -1,7 +1,13 @@
 Changelog
 =========
 
-2.2.3
+2.2.3.1 (2020-03-10)
+==================
+
+* Update the urls regex to fix the issue
+
+
+2.2.3 (2020-03-10)
 ==================
 
 * Fix the URLs issue (articles-list)
