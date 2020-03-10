@@ -1,8 +1,14 @@
 Changelog
 =========
 
+2.2.3
+==================
 
-2.2.2 (unreleased)
+* Fix the URLs issue (articles-list)
+* Fix the compatibility with django-taggit
+
+
+2.2.2
 ==================
 
 * Updated translations
