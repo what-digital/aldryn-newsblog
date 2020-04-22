@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from django import forms
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
@@ -42,6 +43,9 @@ class NewsBlogConfig(TranslatableModel, AppHookConfig):
     translations = TranslatedFields(
         app_title=models.CharField(_('name'), max_length=234),
     )
+
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, blank=True, null=True)
+
 
     permalink_type = models.CharField(
         _('permalink type'), max_length=8,
