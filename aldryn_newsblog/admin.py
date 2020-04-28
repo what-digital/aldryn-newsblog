@@ -94,7 +94,7 @@ class ArticleAdminForm(TranslatableModelForm):
         # doesn't makes much sense to add articles from another article other
         # than save and add another.
         if ('related' in self.fields and  # noqa: W504
-                hasattr(self.fields['related'], 'widget')):
+            hasattr(self.fields['related'], 'widget')):
             self.fields['related'].widget.can_add_related = False
 
 
@@ -185,8 +185,17 @@ class NewsBlogConfigAdmin(
             'app_title', 'permalink_type', 'non_permalink_handling',
             'template_prefix', 'paginate_by', 'pagination_pages_start',
             'pagination_pages_visible', 'exclude_featured',
-            'create_authors', 'search_indexed', 'config.default_published',
+            'create_authors', 'search_indexed', 'config.default_published', 'site',
         )
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+
+        user = request.user
+        if not user.is_superuser:
+            fields.append('site')
+
+        return tuple(fields)
 
 
 admin.site.register(models.NewsBlogConfig, NewsBlogConfigAdmin)

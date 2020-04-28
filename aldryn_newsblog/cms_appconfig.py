@@ -46,7 +46,6 @@ class NewsBlogConfig(TranslatableModel, AppHookConfig):
 
     site = models.ForeignKey(Site, on_delete=models.CASCADE, blank=True, null=True)
 
-
     permalink_type = models.CharField(
         _('permalink type'), max_length=8,
         blank=False, default='slug', choices=PERMALINK_CHOICES,
