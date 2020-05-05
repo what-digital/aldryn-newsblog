@@ -212,23 +212,25 @@ class NewsBlogConfigAdmin(
             'app_title', 'permalink_type', 'non_permalink_handling',
             'template_prefix', 'paginate_by', 'pagination_pages_start',
             'pagination_pages_visible', 'exclude_featured',
-            'create_authors', 'search_indexed', 'config.default_published', 'site',
+            'create_authors', 'search_indexed', 'config.default_published'
         )
 
-    def get_readonly_fields(self, request, obj=None):
-        fields = list(super().get_readonly_fields(request, obj))
-
-        user = request.user
-        if not user.is_superuser:
-            fields.append('site')
-
-        return tuple(fields)
+    def get_fieldsets(self, request, obj):
+        fieldsets = super().get_fieldsets(request, obj)
+        if request.user.is_superuser:
+            fieldsets.append((_('Site'), {'fields': ('site',)}))
+        return fieldsets
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
         return qs.filter(site=request.site)
+
+    def save_model(self, request, obj, form, change):
+        if not request.user.is_superuser and not request.POST.get('site', None):
+            obj.site = request.site
+        super().save_model(request, obj, form, change)
 
 
 admin.site.register(models.NewsBlogConfig, NewsBlogConfigAdmin)
