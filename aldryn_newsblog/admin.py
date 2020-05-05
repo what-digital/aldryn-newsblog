@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.contrib import admin
-from django.utils.translation import ugettext_lazy as _
-
-from cms.admin.placeholderadmin import (
-    FrontendEditableAdminMixin, PlaceholderAdminMixin,
-)
-
-from aldryn_apphooks_config.admin import BaseAppHookConfig, ModelAppHookConfig
+from aldryn_apphooks_config.admin import BaseAppHookConfig
+from aldryn_apphooks_config.admin import ModelAppHookConfig
 from aldryn_people.models import Person
 from aldryn_translation_tools.admin import AllTranslationsMixin
+from cms.admin.placeholderadmin import FrontendEditableAdminMixin
+from cms.admin.placeholderadmin import PlaceholderAdminMixin
+from django.contrib import admin
+from django.contrib.admin.filters import RelatedFieldListFilter
+from django.utils.translation import ugettext_lazy as _
 from parler.admin import TranslatableAdmin
 from parler.forms import TranslatableModelForm
 
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 from . import models
 
 
@@ -98,6 +98,21 @@ class ArticleAdminForm(TranslatableModelForm):
             self.fields['related'].widget.can_add_related = False
 
 
+class NewsBlogConfigFilter(RelatedFieldListFilter):
+
+    def field_choices(self, field, request, model_admin):
+        if request.user.is_superuser:
+            return super().field_choices(field, request, model_admin)
+
+        choices = field.get_choices(
+            include_blank=True,
+            limit_choices_to={
+                'site': request.site
+            }
+        )
+        return choices
+
+
 class ArticleAdmin(
     AllTranslationsMixin,
     PlaceholderAdminMixin,
@@ -109,7 +124,7 @@ class ArticleAdmin(
     list_display = ('title', 'app_config', 'slug', 'is_featured',
                     'is_published')
     list_filter = [
-        'app_config',
+        ('app_config', NewsBlogConfigFilter),
         'categories',
     ]
     actions = (
@@ -170,6 +185,18 @@ class ArticleAdmin(
         request.GET = data
         return super(ArticleAdmin, self).add_view(request, *args, **kwargs)
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if not request.user.is_superuser:
+            if db_field.name == "app_config":
+                kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(app_config__site=request.site)
+
 
 admin.site.register(models.Article, ArticleAdmin)
 
@@ -196,6 +223,12 @@ class NewsBlogConfigAdmin(
             fields.append('site')
 
         return tuple(fields)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(site=request.site)
 
 
 admin.site.register(models.NewsBlogConfig, NewsBlogConfigAdmin)
