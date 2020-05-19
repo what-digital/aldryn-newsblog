@@ -15,6 +15,7 @@ from parler.forms import TranslatableModelForm
 
 from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 from . import models
+from .utils.utilities import get_person_by_user_model_instance
 
 
 def make_published(modeladmin, request, queryset):
@@ -63,7 +64,6 @@ class ArticleAdminForm(TranslatableModelForm):
             'meta_description',
             'meta_keywords',
             'meta_title',
-            'owner',
             'related',
             'slug',
             'tags',
@@ -159,7 +159,6 @@ class ArticleAdmin(
                 'tags',
                 'categories',
                 'related',
-                'owner',
             )
         }),
     )
@@ -175,14 +174,7 @@ class ArticleAdmin(
 
     def add_view(self, request, *args, **kwargs):
         data = request.GET.copy()
-        try:
-            person = Person.objects.get(user=request.user)
-            data['author'] = person.pk
-            request.GET = data
-        except Person.DoesNotExist:
-            pass
-
-        data['owner'] = request.user.pk
+        data['author'] = get_person_by_user_model_instance(user=request.user).pk
         request.GET = data
         return super(ArticleAdmin, self).add_view(request, *args, **kwargs)
 

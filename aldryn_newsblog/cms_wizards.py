@@ -17,6 +17,7 @@ from parler.forms import TranslatableModelForm
 
 from .cms_appconfig import NewsBlogConfig
 from .models import Article
+from .utils.utilities import get_person_by_user_model_instance
 from .utils.utilities import is_valid_namespace
 
 
@@ -91,7 +92,7 @@ class CreateNewsBlogArticleForm(BaseFormMixin, TranslatableModelForm):
 
     def save(self, commit=True):
         article = super(CreateNewsBlogArticleForm, self).save(commit=False)
-        article.owner = self.user
+        article.author = get_person_by_user_model_instance(user=self.user)
         article.save()
 
         # If 'content' field has value, create a TextPlugin with same and add it to the PlaceholderField

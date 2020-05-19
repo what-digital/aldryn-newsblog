@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals
 
+from aldryn_people.models import Person
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sites.models import Site
@@ -199,3 +200,15 @@ def get_valid_languages(namespace, language_code, site_id=None):
         lang_code for lang_code in langs
         if is_valid_namespace_for_language(namespace, lang_code)]
     return valid_translations
+
+
+def get_person_by_user_model_instance(user):
+    person, created = Person.objects.get_or_create(
+        user=user,
+        defaults={
+            'name': ' '.join((
+                user.first_name,
+                user.last_name,
+            )),
+        })
+    return person
