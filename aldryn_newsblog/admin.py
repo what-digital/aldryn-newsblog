@@ -89,7 +89,8 @@ class ArticleAdminForm(TranslatableModelForm):
 
         # Don't allow app_configs to be added here. The correct way to add an
         # apphook-config is to create an apphook on a cms Page.
-        self.fields['app_config'].widget.can_add_related = False
+        if 'app_config' in self.fields.keys():
+            self.fields['app_config'].widget.can_add_related = False
         # Don't allow related articles to be added here.
         # doesn't makes much sense to add articles from another article other
         # than save and add another.
@@ -159,10 +160,10 @@ class ArticleAdmin(
                 'categories',
                 'related',
                 'owner',
-                'app_config',
             )
         }),
     )
+
     filter_horizontal = [
         'categories',
     ]
@@ -184,6 +185,37 @@ class ArticleAdmin(
         data['owner'] = request.user.pk
         request.GET = data
         return super(ArticleAdmin, self).add_view(request, *args, **kwargs)
+
+    def get_fieldsets(self, request, obj):
+        fieldsets = super().get_fieldsets(request, obj)
+        fieldsets_type = type(fieldsets)
+        app_config = self._get_appconfig_from_request(request)
+        if app_config is None:
+            fieldsets = list(fieldsets)
+            fieldsets.append((
+                _('Configuration'),
+                {'fields': ('app_config',)}
+                )
+            )
+        return fieldsets_type(fieldsets)
+
+    def save_model(self, request, obj, form, change):
+        app_config = self._get_appconfig_from_request(request)
+        if app_config:
+            obj.app_config = app_config
+        return super().save_model(request, obj, form, change)
+
+    def _get_appconfig_from_request(self, request):
+        app_config_pk = request.GET.get('app_config', None)
+        if app_config_pk:
+            try:
+                app_config = NewsBlogConfig.objects.get(pk=app_config_pk)
+            except NewsBlogConfig.DoesNotExist:
+                app_config = None
+
+            if app_config and app_config.site == request.site:
+                return app_config
+        return None
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser:
