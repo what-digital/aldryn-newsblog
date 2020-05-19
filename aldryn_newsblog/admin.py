@@ -186,19 +186,6 @@ class ArticleAdmin(
         request.GET = data
         return super(ArticleAdmin, self).add_view(request, *args, **kwargs)
 
-    def get_fieldsets(self, request, obj):
-        fieldsets = super().get_fieldsets(request, obj)
-        fieldsets_type = type(fieldsets)
-        app_config = self._get_appconfig_from_request(request)
-        if app_config is None:
-            fieldsets = list(fieldsets)
-            fieldsets.append((
-                _('Configuration'),
-                {'fields': ('app_config',)}
-                )
-            )
-        return fieldsets_type(fieldsets)
-
     def save_model(self, request, obj, form, change):
         app_config = self._get_appconfig_from_request(request)
         if app_config:
