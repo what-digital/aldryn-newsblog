@@ -40,7 +40,7 @@ from aldryn_newsblog.utils.utilities import get_valid_languages_from_request
 from .cms_appconfig import NewsBlogConfig
 from .managers import RelatedManager
 from .utils import get_plugin_index_data, get_request, strip_tags
-
+from .utils.utilities import get_person_by_user_model_instance
 
 if settings.LANGUAGES:
     LANGUAGE_CODES = [language[0] for language in settings.LANGUAGES]
@@ -159,6 +159,16 @@ class Article(TranslatedAutoSlugifyMixin,
 
     class Meta:
         ordering = ['-publishing_date']
+
+    @property
+    def owner(self):
+        return self.author.user
+
+    @owner.setter
+    def owner(self, user):
+        person = get_person_by_user_model_instance(user)
+        self.author = person
+        self.save()
 
     @property
     def published(self):
