@@ -108,6 +108,16 @@ class NewsBlogConfig(TranslatableModel, AppHookConfig):
         help_text=_('Include articles in search indexes?'),
     )
 
+    placeholder_feature = PlaceholderField(
+        'newsblog_feature',
+        related_name='aldryn_newsblog_feature',
+    )
+
+    placeholder_sidebar = PlaceholderField(
+        'newsblog_sidebar',
+        related_name='aldryn_newsblog_sidebar',
+    )
+
     placeholder_base_top = PlaceholderField(
         'newsblog_base_top',
         related_name='aldryn_newsblog_base_top',
