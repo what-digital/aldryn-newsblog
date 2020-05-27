@@ -176,13 +176,14 @@ class ArticleAdmin(
         data = request.GET.copy()
         data['author'] = get_person_by_user_model_instance(user=request.user).pk
         request.GET = data
-        return super(ArticleAdmin, self).add_view(request, *args, **kwargs)
+        return super().add_view(request, *args, **kwargs)
 
     def save_model(self, request, obj, form, change):
         app_config = self._get_appconfig_from_request(request)
         if app_config:
             obj.app_config = app_config
-        return super().save_model(request, obj, form, change)
+            return super().save_model(request, obj, form, change)
+        raise ValueError("The App Config wasn't specified")
 
     def _get_appconfig_from_request(self, request):
         app_config_pk = request.GET.get('app_config', None)
@@ -208,6 +209,15 @@ class ArticleAdmin(
             return qs
         return qs.filter(app_config__site=request.site)
 
+    def get_fieldsets(self, request, obj):
+        fieldsets = list(super().get_fieldsets(request, obj))
+        app_config_pk = request.GET.get('app_config', None)
+        if obj:
+            fieldsets.append(
+                (_('App Config'), {'classes': ('collapse',), 'fields': ('app_config',)})
+            )
+        return fieldsets
+
 
 admin.site.register(models.Article, ArticleAdmin)
 
@@ -227,7 +237,7 @@ class NewsBlogConfigAdmin(
         )
 
     def get_fieldsets(self, request, obj):
-        fieldsets = super().get_fieldsets(request, obj)
+        fieldsets = list(super().get_fieldsets(request, obj))
         if request.user.is_superuser:
             fieldsets.append((_('Site'), {'fields': ('site',)}))
         return fieldsets
@@ -239,9 +249,16 @@ class NewsBlogConfigAdmin(
         return qs.filter(site=request.site)
 
     def save_model(self, request, obj, form, change):
-        if not request.user.is_superuser and not request.POST.get('site', None):
+        if not request.POST.get('site', None):
             obj.site = request.site
-        super().save_model(request, obj, form, change)
+        return super().save_model(request, obj, form, change)
+
+    def add_view(self, request, *args, **kwargs):
+        if request.user.is_superuser:
+            data = request.GET.copy()
+            data['site'] = request.site.pk
+            request.GET = data
+        return super().add_view(request, *args, **kwargs)
 
 
 admin.site.register(models.NewsBlogConfig, NewsBlogConfigAdmin)
