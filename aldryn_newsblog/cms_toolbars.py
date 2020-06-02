@@ -102,7 +102,7 @@ class NewsBlogToolbar(CMSToolbar):
                 menu.add_sideframe_item(_('Article list'), url=url)
 
             if add_article_perm:
-                url_args = {'app_config': config.pk}
+                url_args = {'app_config': config.pk, 'adding_from_toolbar': True}
                 if language:
                     url_args.update({'language': language, })
                 url = get_admin_url('aldryn_newsblog_article_add', **url_args)

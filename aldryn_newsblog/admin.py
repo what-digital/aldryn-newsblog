@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from aldryn_apphooks_config.admin import BaseAppHookConfig
 from aldryn_apphooks_config.admin import ModelAppHookConfig
-from aldryn_people.models import Person
 from aldryn_translation_tools.admin import AllTranslationsMixin
 from cms.admin.placeholderadmin import FrontendEditableAdminMixin
 from cms.admin.placeholderadmin import PlaceholderAdminMixin
@@ -118,7 +117,6 @@ class ArticleAdmin(
     AllTranslationsMixin,
     PlaceholderAdminMixin,
     FrontendEditableAdminMixin,
-    ModelAppHookConfig,
     TranslatableAdmin
 ):
     form = ArticleAdminForm
@@ -183,19 +181,7 @@ class ArticleAdmin(
         if app_config:
             obj.app_config = app_config
             return super().save_model(request, obj, form, change)
-        raise ValueError("The App Config wasn't specified")
-
-    def _get_appconfig_from_request(self, request):
-        app_config_pk = request.GET.get('app_config', None)
-        if app_config_pk:
-            try:
-                app_config = NewsBlogConfig.objects.get(pk=app_config_pk)
-            except NewsBlogConfig.DoesNotExist:
-                app_config = None
-
-            if app_config and app_config.site == request.site:
-                return app_config
-        return None
+        raise ValueError("The App Config isn't specified")
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser:
@@ -211,12 +197,24 @@ class ArticleAdmin(
 
     def get_fieldsets(self, request, obj):
         fieldsets = list(super().get_fieldsets(request, obj))
-        app_config_pk = request.GET.get('app_config', None)
-        if obj:
+        adding_from_toolbar = request.GET.get('adding_from_toolbar', None)
+        if not adding_from_toolbar:
             fieldsets.append(
                 (_('App Config'), {'classes': ('collapse',), 'fields': ('app_config',)})
             )
         return fieldsets
+
+    def _get_appconfig_from_request(self, request):
+        app_config_pk = request.GET.get('app_config', None)
+        if app_config_pk:
+            try:
+                app_config = NewsBlogConfig.objects.get(pk=app_config_pk)
+            except NewsBlogConfig.DoesNotExist:
+                app_config = None
+
+            if app_config and app_config.site == request.site:
+                return app_config
+        return None
 
 
 admin.site.register(models.Article, ArticleAdmin)
