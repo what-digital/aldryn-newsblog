@@ -2,12 +2,12 @@
 from __future__ import unicode_literals
 
 from aldryn_apphooks_config.admin import BaseAppHookConfig
-from aldryn_apphooks_config.admin import ModelAppHookConfig
 from aldryn_translation_tools.admin import AllTranslationsMixin
 from cms.admin.placeholderadmin import FrontendEditableAdminMixin
 from cms.admin.placeholderadmin import PlaceholderAdminMixin
 from django.contrib import admin
 from django.contrib.admin.filters import RelatedFieldListFilter
+from django.forms import forms
 from django.utils.translation import ugettext_lazy as _
 from parler.admin import TranslatableAdmin
 from parler.forms import TranslatableModelForm
@@ -97,6 +97,12 @@ class ArticleAdminForm(TranslatableModelForm):
             hasattr(self.fields['related'], 'widget')):
             self.fields['related'].widget.can_add_related = False
 
+    def clean(self):
+        _is_app_config_in_request = 'app_config' in self.request_data.keys()
+        _is_app_config_in_form = 'app_config' in self.data.keys()
+        if not _is_app_config_in_request and not _is_app_config_in_form:
+            raise forms.ValidationError("App Config is required")
+
 
 class NewsBlogConfigFilter(RelatedFieldListFilter):
 
@@ -170,6 +176,11 @@ class ArticleAdmin(
     app_config_selection_title = ''
     app_config_selection_desc = ''
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj=obj, **kwargs)
+        form.request_data = request.GET.copy()
+        return form
+
     def add_view(self, request, *args, **kwargs):
         data = request.GET.copy()
         data['author'] = get_person_by_user_model_instance(user=request.user).pk
@@ -177,11 +188,26 @@ class ArticleAdmin(
         return super().add_view(request, *args, **kwargs)
 
     def save_model(self, request, obj, form, change):
-        app_config = self._get_appconfig_from_request(request)
+        app_config = self._get_appconfig(request, form)
         if app_config:
             obj.app_config = app_config
-            return super().save_model(request, obj, form, change)
-        raise ValueError("The App Config isn't specified")
+        return super().save_model(request, obj, form, change)
+
+    def _get_appconfig(self, request, form):
+        app_config_pk = None
+        if 'app_config' in form.data.keys():
+            app_config_pk = form.data.get('app_config', None)
+        elif 'app_config' in request.GET.keys():
+            app_config_pk = request.GET.get('app_config', None)
+
+        app_config = None
+        if app_config_pk:
+            try:
+                app_config = NewsBlogConfig.objects.get(pk=app_config_pk)
+            except NewsBlogConfig.DoesNotExist:
+                pass
+
+        return app_config
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser:
@@ -203,18 +229,6 @@ class ArticleAdmin(
                 (_('App Config'), {'classes': ('collapse',), 'fields': ('app_config',)})
             )
         return fieldsets
-
-    def _get_appconfig_from_request(self, request):
-        app_config_pk = request.GET.get('app_config', None)
-        if app_config_pk:
-            try:
-                app_config = NewsBlogConfig.objects.get(pk=app_config_pk)
-            except NewsBlogConfig.DoesNotExist:
-                app_config = None
-
-            if app_config and app_config.site == request.site:
-                return app_config
-        return None
 
 
 admin.site.register(models.Article, ArticleAdmin)
