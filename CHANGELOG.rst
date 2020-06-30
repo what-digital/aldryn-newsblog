@@ -1,6 +1,13 @@
 Changelog
 =========
 
+
+2.2.3.2 (2020-06-30)
+==================
+
+* Add another render_placeholder_no_cache template tag
+
+
 2.2.3.1 (2020-03-10)
 ==================
 
