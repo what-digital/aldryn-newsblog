@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.contrib import admin
-from django.utils.translation import ugettext_lazy as _
-
-from cms.admin.placeholderadmin import (
-    FrontendEditableAdminMixin, PlaceholderAdminMixin,
-)
-
-from aldryn_apphooks_config.admin import BaseAppHookConfig, ModelAppHookConfig
-from aldryn_people.models import Person
+from aldryn_apphooks_config.admin import BaseAppHookConfig
 from aldryn_translation_tools.admin import AllTranslationsMixin
+from cms.admin.placeholderadmin import FrontendEditableAdminMixin
+from cms.admin.placeholderadmin import PlaceholderAdminMixin
+from django.contrib import admin
+from django.contrib.admin.filters import RelatedFieldListFilter
+from django.forms import forms
+from django.utils.translation import ugettext_lazy as _
 from parler.admin import TranslatableAdmin
 from parler.forms import TranslatableModelForm
 
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 from . import models
+from .utils.utilities import get_person_by_user_model_instance
 
 
 def make_published(modeladmin, request, queryset):
@@ -63,7 +63,6 @@ class ArticleAdminForm(TranslatableModelForm):
             'meta_description',
             'meta_keywords',
             'meta_title',
-            'owner',
             'related',
             'slug',
             'tags',
@@ -89,27 +88,48 @@ class ArticleAdminForm(TranslatableModelForm):
 
         # Don't allow app_configs to be added here. The correct way to add an
         # apphook-config is to create an apphook on a cms Page.
-        self.fields['app_config'].widget.can_add_related = False
+        if 'app_config' in self.fields.keys():
+            self.fields['app_config'].widget.can_add_related = False
         # Don't allow related articles to be added here.
         # doesn't makes much sense to add articles from another article other
         # than save and add another.
         if ('related' in self.fields and  # noqa: W504
-                hasattr(self.fields['related'], 'widget')):
+            hasattr(self.fields['related'], 'widget')):
             self.fields['related'].widget.can_add_related = False
+
+    def clean(self):
+        _is_app_config_in_request = 'app_config' in self.request_data.keys()
+        _is_app_config_in_form = 'app_config' in self.data.keys()
+        if not _is_app_config_in_request and not _is_app_config_in_form:
+            raise forms.ValidationError("App Config is required")
+
+
+class NewsBlogConfigFilter(RelatedFieldListFilter):
+
+    def field_choices(self, field, request, model_admin):
+        if request.user.is_superuser:
+            return super().field_choices(field, request, model_admin)
+
+        choices = field.get_choices(
+            include_blank=True,
+            limit_choices_to={
+                'site': request.site
+            }
+        )
+        return choices
 
 
 class ArticleAdmin(
     AllTranslationsMixin,
     PlaceholderAdminMixin,
     FrontendEditableAdminMixin,
-    ModelAppHookConfig,
     TranslatableAdmin
 ):
     form = ArticleAdminForm
     list_display = ('title', 'app_config', 'slug', 'is_featured',
                     'is_published')
     list_filter = [
-        'app_config',
+        ('app_config', NewsBlogConfigFilter),
         'categories',
     ]
     actions = (
@@ -143,11 +163,10 @@ class ArticleAdmin(
                 'tags',
                 'categories',
                 'related',
-                'owner',
-                'app_config',
             )
         }),
     )
+
     filter_horizontal = [
         'categories',
     ]
@@ -157,18 +176,59 @@ class ArticleAdmin(
     app_config_selection_title = ''
     app_config_selection_desc = ''
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj=obj, **kwargs)
+        form.request_data = request.GET.copy()
+        return form
+
     def add_view(self, request, *args, **kwargs):
         data = request.GET.copy()
-        try:
-            person = Person.objects.get(user=request.user)
-            data['author'] = person.pk
-            request.GET = data
-        except Person.DoesNotExist:
-            pass
-
-        data['owner'] = request.user.pk
+        data['author'] = get_person_by_user_model_instance(user=request.user).pk
         request.GET = data
-        return super(ArticleAdmin, self).add_view(request, *args, **kwargs)
+        return super().add_view(request, *args, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        app_config = self._get_appconfig(request, form)
+        if app_config:
+            obj.app_config = app_config
+        return super().save_model(request, obj, form, change)
+
+    def _get_appconfig(self, request, form):
+        app_config_pk = None
+        if 'app_config' in form.data.keys():
+            app_config_pk = form.data.get('app_config', None)
+        elif 'app_config' in request.GET.keys():
+            app_config_pk = request.GET.get('app_config', None)
+
+        app_config = None
+        if app_config_pk:
+            try:
+                app_config = NewsBlogConfig.objects.get(pk=app_config_pk)
+            except NewsBlogConfig.DoesNotExist:
+                pass
+
+        return app_config
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if not request.user.is_superuser:
+            if db_field.name == "app_config":
+                kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(app_config__site=request.site)
+
+    def get_fieldsets(self, request, obj):
+        fieldsets = list(super().get_fieldsets(request, obj))
+        adding_from_toolbar = request.GET.get('adding_from_toolbar', None)
+        if not adding_from_toolbar:
+            fieldsets.append(
+                (_('App Config'), {'classes': ('collapse',), 'fields': ('app_config',)})
+            )
+        return fieldsets
 
 
 admin.site.register(models.Article, ArticleAdmin)
@@ -185,8 +245,32 @@ class NewsBlogConfigAdmin(
             'app_title', 'permalink_type', 'non_permalink_handling',
             'template_prefix', 'paginate_by', 'pagination_pages_start',
             'pagination_pages_visible', 'exclude_featured',
-            'create_authors', 'search_indexed', 'config.default_published',
+            'create_authors', 'search_indexed', 'config.default_published'
         )
+
+    def get_fieldsets(self, request, obj):
+        fieldsets = list(super().get_fieldsets(request, obj))
+        if request.user.is_superuser:
+            fieldsets.append((_('Site'), {'fields': ('site',)}))
+        return fieldsets
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(site=request.site)
+
+    def save_model(self, request, obj, form, change):
+        if not request.POST.get('site', None):
+            obj.site = request.site
+        return super().save_model(request, obj, form, change)
+
+    def add_view(self, request, *args, **kwargs):
+        if request.user.is_superuser:
+            data = request.GET.copy()
+            data['site'] = request.site.pk
+            request.GET = data
+        return super().add_view(request, *args, **kwargs)
 
 
 admin.site.register(models.NewsBlogConfig, NewsBlogConfigAdmin)
