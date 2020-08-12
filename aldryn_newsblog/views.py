@@ -2,30 +2,29 @@
 
 from __future__ import unicode_literals
 
-from datetime import date, datetime
+from datetime import date
+from datetime import datetime
 
+from aldryn_apphooks_config.mixins import AppConfigMixin
+from aldryn_people.models import Person
+from dateutil.relativedelta import relativedelta
 from django.db.models import Q
-from django.http import (
-    Http404, HttpResponsePermanentRedirect, HttpResponseRedirect,
-)
+from django.http import Http404
+from django.http import HttpResponsePermanentRedirect
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import translation
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
-
 from menus.utils import set_language_changer
-
-from aldryn_apphooks_config.mixins import AppConfigMixin
-from aldryn_categories.models import Category
-from aldryn_people.models import Person
-from dateutil.relativedelta import relativedelta
-from parler.views import TranslatableSlugMixin, ViewUrlMixin
+from parler.views import TranslatableSlugMixin
+from parler.views import ViewUrlMixin
 from taggit.models import Tag
 
 from aldryn_newsblog.compat import toolbar_edit_mode_active
 from aldryn_newsblog.utils.utilities import get_valid_languages_from_request
-
 from .models import Article
+from .models import Category
 from .utils import add_prefix_to_path
 
 

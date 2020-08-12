@@ -9,7 +9,6 @@ REQUIREMENTS = [
     'python-dateutil',
     'aldryn-apphooks-config>=0.5.2',
     'aldryn-boilerplates>=0.8.0',
-    'aldryn-categories>=1.2.0',
     'aldryn-common>=1.0.5',
     'aldryn-people>=2.2.0',
     'aldryn-translation-tools>=0.3.0',

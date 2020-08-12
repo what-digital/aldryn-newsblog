@@ -23,12 +23,13 @@ from cms.test_utils.testcases import CMSTestCase, TransactionCMSTestCase
 from cms.toolbar.toolbar import CMSToolbar
 from cms.utils.conf import get_cms_setting
 
-from aldryn_categories.models import Category
 from aldryn_people.models import Person
 from parler.utils.context import switch_language
 
 from aldryn_newsblog.cms_apps import NewsBlogApp
-from aldryn_newsblog.models import Article, NewsBlogConfig
+from aldryn_newsblog.models import Article
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
+from aldryn_newsblog.models import Category
 
 
 TESTS_ROOT = os.path.abspath(os.path.dirname(__file__))

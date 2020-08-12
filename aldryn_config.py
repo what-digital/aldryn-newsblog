@@ -12,7 +12,6 @@ class Form(forms.BaseForm):
         settings['INSTALLED_APPS'].extend([
             'aldryn_apphooks_config',
             'aldryn_boilerplates',
-            'aldryn_categories',
             'aldryn_common',
             'aldryn_newsblog',
             'aldryn_people',

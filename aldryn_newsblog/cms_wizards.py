@@ -19,6 +19,8 @@ from .cms_appconfig import NewsBlogConfig
 from .models import Article
 from .utils.utilities import get_person_by_user_model_instance
 from .utils.utilities import is_valid_namespace
+from treebeard.forms import movenodeform_factory, MoveNodeForm
+from .models import Category
 
 
 def get_published_app_configs():
@@ -116,3 +118,32 @@ newsblog_article_wizard = NewsBlogArticleWizard(
 )
 
 wizard_pool.register(newsblog_article_wizard)
+
+
+class CategoryWizard(Wizard):
+
+    def get_success_url(self, *args, **kwargs):
+        # Since categories do not have their own urls, return None so that
+        # cms knows that it should just close the wizard window (reload
+        # current page)
+        return None
+
+
+class CreateCategoryForm(BaseFormMixin, TranslatableModelForm, MoveNodeForm):
+    """
+    The model form for Category wizard.
+    """
+
+    class Meta:
+        model = Category
+        fields = ['name', 'slug', ]
+
+
+aldryn_category_wizard = CategoryWizard(
+    title=_('New category'),
+    weight=290,
+    form=movenodeform_factory(Category, form=CreateCategoryForm),
+    description=_('Create a new category.')
+)
+
+wizard_pool.register(aldryn_category_wizard)

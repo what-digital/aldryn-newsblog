@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django import forms
 
-from . import models
+from aldryn_newsblog import models
 
 
 class AutoAppConfigFormMixin(object):

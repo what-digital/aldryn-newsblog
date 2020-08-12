@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from aldryn_apphooks_config.admin import BaseAppHookConfig
 from aldryn_translation_tools.admin import AllTranslationsMixin
 from cms.admin.placeholderadmin import FrontendEditableAdminMixin
@@ -13,8 +10,8 @@ from parler.admin import TranslatableAdmin
 from parler.forms import TranslatableModelForm
 
 from aldryn_newsblog.cms_appconfig import NewsBlogConfig
-from . import models
-from .utils.utilities import get_person_by_user_model_instance
+from aldryn_newsblog import models
+from aldryn_newsblog.utils.utilities import get_person_by_user_model_instance
 
 
 def make_published(modeladmin, request, queryset):
@@ -273,4 +270,4 @@ class NewsBlogConfigAdmin(
         return super().add_view(request, *args, **kwargs)
 
 
-admin.site.register(models.NewsBlogConfig, NewsBlogConfigAdmin)
+admin.site.register(NewsBlogConfig, NewsBlogConfigAdmin)
