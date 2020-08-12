@@ -4,7 +4,7 @@ import parler.fields
 from django.db import migrations
 from django.db import models
 
-from aldryn_newsblog.models import NewsBlogConfig
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 
 
 def update_app_configs(apps, schema_editor):

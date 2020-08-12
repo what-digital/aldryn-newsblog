@@ -8,8 +8,8 @@ from django.utils.translation import get_language_from_request
 from django.utils.translation import ugettext as _
 
 from aldryn_apphooks_config.utils import get_app_instance
-from aldryn_categories.models import Category
 
+from aldryn_newsblog.models import Category
 from aldryn_newsblog.models import Article
 from aldryn_newsblog.utils.utilities import get_valid_languages
 

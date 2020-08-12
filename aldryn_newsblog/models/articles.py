@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import unicode_literals
-
 import django.core.validators
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -21,8 +17,8 @@ from cms.models.pluginmodel import CMSPlugin
 from cms.utils.i18n import get_current_language, get_redirect_on_fallback
 
 from aldryn_apphooks_config.fields import AppHookConfigField
-from aldryn_categories.fields import CategoryManyToManyField
-from aldryn_categories.models import Category
+from aldryn_newsblog import fields as newsblog_fields
+from aldryn_categories import fields as categories_fields
 from aldryn_people.models import Person
 from aldryn_translation_tools.models import (
     TranslatedAutoSlugifyMixin, TranslationHelperMixin,
@@ -37,10 +33,11 @@ from taggit.models import Tag
 from aldryn_newsblog.compat import toolbar_edit_mode_active
 from aldryn_newsblog.utils.utilities import get_valid_languages_from_request
 
-from .cms_appconfig import NewsBlogConfig
-from .managers import RelatedManager
-from .utils import get_plugin_index_data, get_request, strip_tags
-from .utils.utilities import get_person_by_user_model_instance
+from .categoreis import Category
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
+from aldryn_newsblog.managers import RelatedManager
+from aldryn_newsblog.utils import get_plugin_index_data, get_request, strip_tags
+from aldryn_newsblog.utils.utilities import get_person_by_user_model_instance
 
 if settings.LANGUAGES:
     LANGUAGE_CODES = [language[0] for language in settings.LANGUAGES]
@@ -127,9 +124,15 @@ class Article(TranslatedAutoSlugifyMixin,
         verbose_name=_('Section'),
         help_text='',
     )
-    categories = CategoryManyToManyField('aldryn_categories.Category',
+
+    categories = categories_fields.CategoryManyToManyField('aldryn_categories.Category',
                                          verbose_name=_('categories'),
                                          blank=True)
+
+    new_categories = newsblog_fields.CategoryManyToManyField('aldryn_newsblog.Category',
+                                         verbose_name=_('categories'),
+                                         blank=True)
+
     publishing_date = models.DateTimeField(_('publishing date'),
                                            default=now)
     is_published = models.BooleanField(_('is published'), default=False,
@@ -391,7 +394,7 @@ class NewsBlogCategoriesPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
             FROM aldryn_newsblog_article, aldryn_newsblog_article_categories
             WHERE
                 aldryn_newsblog_article_categories.category_id =
-                    aldryn_categories_category.id AND
+                    aldryn_newsblog_category.id AND
                 aldryn_newsblog_article_categories.article_id =
                     aldryn_newsblog_article.id AND
                 aldryn_newsblog_article.app_config_id = %d
@@ -404,8 +407,8 @@ class NewsBlogCategoriesPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
             """ % (SQL_IS_TRUE, SQL_NOW_FUNC, )
 
         query = """
-            SELECT (%s) as article_count, aldryn_categories_category.*
-            FROM aldryn_categories_category
+            SELECT (%s) as article_count, aldryn_newsblog_category.*
+            FROM aldryn_newsblog_category
         """ % (subquery, )
 
         raw_categories = list(Category.objects.raw(query))

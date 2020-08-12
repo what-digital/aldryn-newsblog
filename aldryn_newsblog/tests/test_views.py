@@ -21,7 +21,8 @@ from parler.tests.utils import override_parler_settings
 from parler.utils.conf import add_default_language_settings
 from parler.utils.context import smart_override, switch_language
 
-from aldryn_newsblog.models import Article, NewsBlogConfig
+from aldryn_newsblog.models import Article
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 from aldryn_newsblog.search_indexes import ArticleIndex
 
 from . import TESTS_STATIC_ROOT, NewsBlogTestCase

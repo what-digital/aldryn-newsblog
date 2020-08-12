@@ -15,7 +15,7 @@ from cms.models import StaticPlaceholder
 
 import pytz
 
-from aldryn_newsblog.models import NewsBlogConfig
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 
 from . import NewsBlogTestCase
 
