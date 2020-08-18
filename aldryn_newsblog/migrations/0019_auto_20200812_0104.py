@@ -78,18 +78,23 @@ def upload_categories_data(categories_data_list: list):
 
 def assign_blog_configs():
     for root_category in OldCategory.get_root_nodes():
-        newsblog_config = None
         tree_related_app_configs = list([article.app_config for article in root_category.article_set.all()])
         for category in root_category.get_descendants():
             tree_related_app_configs.extend([article.app_config for article in category.article_set.all()])
-        newsblog_config = list(set(tree_related_app_configs))[0]
+
+        if tree_related_app_configs:
+            newsblog_config = list(set(tree_related_app_configs))[0]
+        else:
+            newsblog_config = None
 
         new_category = NewCategory.objects.get(translations__slug=root_category.slug)
-        new_category.newsblog_config = newsblog_config
+        if newsblog_config:
+            new_category.newsblog_config = newsblog_config
         new_category.save()
         for category in root_category.get_descendants():
             new_category = NewCategory.objects.get(translations__slug=category.slug)
-            new_category.newsblog_config = newsblog_config
+            if newsblog_config:
+                new_category.newsblog_config = newsblog_config
             new_category.save()
 
 
