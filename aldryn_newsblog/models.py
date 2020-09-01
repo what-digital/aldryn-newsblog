@@ -118,6 +118,7 @@ class Article(TranslatedAutoSlugifyMixin,
     author = models.ForeignKey(
         Person,
         null=True,
+        blank=True,
         verbose_name=_('author'),
         on_delete=models.CASCADE,
     )
