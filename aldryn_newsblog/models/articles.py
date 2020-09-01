@@ -123,11 +123,7 @@ class Article(TranslatedAutoSlugifyMixin,
         help_text='',
     )
 
-    categories = categories_fields.CategoryManyToManyField('aldryn_categories.Category',
-                                         verbose_name=_('categories'),
-                                         blank=True)
-
-    new_categories = newsblog_fields.CategoryManyToManyField('aldryn_newsblog.Category',
+    categories = newsblog_fields.CategoryManyToManyField('aldryn_newsblog.Category',
                                          verbose_name=_('categories'),
                                          blank=True)
 
