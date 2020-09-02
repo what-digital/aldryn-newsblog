@@ -1,10 +1,8 @@
-**Deprecated**
+################################
+Aldryn Newsblog - Advanced Permissions
+################################
 
-This project is no longer supported.
-
-Divio will undertake no further development or maintenance of this project. If you are interested in continuing to develop it, use the fork functionality from GitHub. We are not able to transfer ownership of the repository to another party.
-
-Please have a look at alternatives such as `djangocms-blog <https://github.com/nephila/djangocms-blog>`_.
+This is a fork of https://github.com/divio/aldryn-newsblog that features per-site permissions for blog articles and categories in a django CMS multi site environment.
 
 #################################
 Aldryn News & Blog for django CMS
