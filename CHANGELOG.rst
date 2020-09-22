@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.5 (2020-09-22)
+==================
+
+* Added a new "Category" model and implemented the way to migrate all the old Article's relations
+
+
 2.2.3.4 (2020-09-09)
 ==================
 
