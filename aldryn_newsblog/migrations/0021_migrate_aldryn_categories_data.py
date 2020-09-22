@@ -101,19 +101,9 @@ def assign_blog_configs():
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('aldryn_newsblog', '0019_auto_20200812_0104'),
+        ('aldryn_newsblog', '0020_auto_20200812_0104'),
     ]
 
     operations = [
         migrations.RunPython(dump_categories_data),
-
-        # migrations.RemoveField(
-        #     model_name='article',
-        #     name='categories',
-        # ),
-        # migrations.RenameField(
-        #     model_name='article',
-        #     old_name='new_categories',
-        #     new_name='categories',
-        # ),
     ]
