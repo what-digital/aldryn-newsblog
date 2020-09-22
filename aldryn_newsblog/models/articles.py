@@ -124,17 +124,9 @@ class Article(TranslatedAutoSlugifyMixin,
         help_text='',
     )
 
-    # categories = newsblog_fields.CategoryManyToManyField('aldryn_newsblog.Category',
-    #                                      verbose_name=_('categories'),
-    #                                      blank=True)
-
-    categories = categories_fields.CategoryManyToManyField('aldryn_categories.Category',
-                                                           verbose_name=_('categories'),
-                                                           blank=True)
-
-    new_categories = newsblog_fields.CategoryManyToManyField('aldryn_newsblog.Category',
-                                                         verbose_name=_('categories'),
-                                                         blank=True)
+    categories = newsblog_fields.CategoryManyToManyField('aldryn_newsblog.Category',
+                                         verbose_name=_('categories'),
+                                         blank=True)
 
     publishing_date = models.DateTimeField(_('publishing date'),
                                            default=now)
