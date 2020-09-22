@@ -21,7 +21,7 @@ translation.activate(settings.LANGUAGE_CODE)
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('aldryn_newsblog', '0020_migrate_aldryn_categories_data'),
+        ('aldryn_newsblog', '0021_migrate_aldryn_categories_data'),
     ]
 
     operations = [
