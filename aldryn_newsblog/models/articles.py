@@ -18,7 +18,6 @@ from cms.utils.i18n import get_current_language, get_redirect_on_fallback
 
 from aldryn_apphooks_config.fields import AppHookConfigField
 from aldryn_newsblog import fields as newsblog_fields
-from aldryn_categories import fields as categories_fields
 from aldryn_people.models import Person
 from aldryn_translation_tools.models import (
     TranslatedAutoSlugifyMixin, TranslationHelperMixin,
