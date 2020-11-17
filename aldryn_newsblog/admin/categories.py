@@ -1,6 +1,7 @@
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 from django.contrib import admin
 from django.utils.translation import ugettext
-
+from django.utils.translation import ugettext_lazy as _
 from parler.admin import TranslatableAdmin
 
 from treebeard.admin import TreeAdmin
@@ -34,6 +35,18 @@ class CategoryAdmin(TranslatableAdmin, TreeAdmin):
         FormClass.base_fields['_position'].label = ugettext('Position')
         FormClass.base_fields['_ref_node_id'].label = ugettext('Relative to')
         return FormClass
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if not request.user.is_superuser:
+            if db_field.name == "newsblog_config":
+                kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(newsblog_config__site=request.site)
 
 
 admin.site.register(Category, CategoryAdmin)

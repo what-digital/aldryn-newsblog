@@ -9,8 +9,9 @@ from django.utils.translation import ugettext_lazy as _
 from parler.admin import TranslatableAdmin
 from parler.forms import TranslatableModelForm
 
-from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 from aldryn_newsblog import models
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
+from aldryn_newsblog.models import Category
 from aldryn_newsblog.utils.utilities import get_person_by_user_model_instance
 
 
@@ -211,6 +212,12 @@ class ArticleAdmin(
             if db_field.name == "app_config":
                 kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if not request.user.is_superuser:
+            if db_field.name == "categories":
+                kwargs["queryset"] = Category.objects.filter(newsblog_config__site=request.site)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
