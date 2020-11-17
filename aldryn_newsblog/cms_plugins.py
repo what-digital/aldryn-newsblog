@@ -1,5 +1,7 @@
 from distutils.version import LooseVersion
 
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
+
 from django.utils.translation import ugettext_lazy as _
 
 from cms import __version__ as cms_version
@@ -126,6 +128,11 @@ class NewsBlogCategoriesPlugin(NewsBlogPlugin):
             '{0}:article-list'.format(instance.app_config.namespace),
             default=None)
         return context
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "app_config":
+            kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @plugin_pool.register_plugin
