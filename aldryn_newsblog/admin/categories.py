@@ -1,17 +1,11 @@
-from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 from django.contrib import admin
-from django.utils.translation import ugettext
-from django.utils.translation import ugettext_lazy as _
 from parler.admin import TranslatableAdmin
 
-from treebeard.admin import TreeAdmin
-
-from aldryn_newsblog.forms import CategoryAdminForm
+from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 from aldryn_newsblog.models import Category
 
 
-class CategoryAdmin(TranslatableAdmin, TreeAdmin):
-    form = CategoryAdminForm
+class CategoryAdmin(TranslatableAdmin):
 
     fieldsets = (
         (None, {
@@ -21,20 +15,7 @@ class CategoryAdmin(TranslatableAdmin, TreeAdmin):
                 'newsblog_config',
             )
         }),
-        (' ', {
-            'fields': (
-                '_position',
-                '_ref_node_id',
-            )
-        }),
     )
-
-    def get_form(self, request, obj=None, **kwargs):
-        FormClass = super(CategoryAdmin, self).get_form(request, obj, **kwargs)
-        # Workaround for missing translations on treebeard
-        FormClass.base_fields['_position'].label = ugettext('Position')
-        FormClass.base_fields['_ref_node_id'].label = ugettext('Relative to')
-        return FormClass
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser:

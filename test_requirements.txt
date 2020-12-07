@@ -16,7 +16,6 @@ coverage>=3.7.1
 dj-database-url
 django-classy-tags
 django-sekizai
-django-treebeard>=2.0
 djangocms-admin-style
 djangocms-helper
 djangocms-text-ckeditor

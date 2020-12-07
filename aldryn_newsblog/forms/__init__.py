@@ -1,4 +1,3 @@
-from .categories import CategoryAdminForm
 from .newsblog import AutoAppConfigFormMixin
 from .newsblog import NewsBlogArchivePluginForm
 from .newsblog import NewsBlogArticleSearchPluginForm

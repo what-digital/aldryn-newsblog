@@ -5,44 +5,13 @@ from django.utils.translation import ugettext_lazy as _
 from aldryn_translation_tools.models import (
     TranslatedAutoSlugifyMixin, TranslationHelperMixin)
 from parler import appsettings
-from parler.managers import TranslatableManager, TranslatableQuerySet
 from parler.models import TranslatableModel, TranslatedFields
-from treebeard.ns_tree import NS_Node, NS_NodeManager, NS_NodeQuerySet
 from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 
 LANGUAGE_CODES = appsettings.PARLER_LANGUAGES.get_active_choices()
 
 
-class CategoryQuerySet(TranslatableQuerySet, NS_NodeQuerySet):
-    pass
-
-
-class CategoryManager(TranslatableManager, NS_NodeManager):
-    queryset_class = CategoryQuerySet
-
-    def get_queryset(self):
-        return self.queryset_class(
-            self.model,
-            using=self._db
-        ).order_by('tree_id', 'lft')
-
-
-#
-# TODO: I would have preferred to make this a base class "CategoryBase" which
-# is Abstract, then subclass it as a concrete Category class. But, Parler
-# cannot be applied to an Abstract class.
-#
-# TODO: At some point, consider an approach like this:
-#     https://gist.github.com/GaretJax/7c7a9acc055c05c65041
-#
-
-class Category(TranslatedAutoSlugifyMixin, TranslationHelperMixin,
-               TranslatableModel, NS_Node):
-    """
-    A category is hierarchical. The structure is implemented with django-
-    treebeard's Nested Sets trees, which has the performance characteristics
-    we're after, namely: fast reads at the expense of write-speed.
-    """
+class Category(TranslatedAutoSlugifyMixin, TranslationHelperMixin, TranslatableModel):
     slug_source_field_name = 'name'
 
     translations = TranslatedFields(
@@ -69,13 +38,7 @@ class Category(TranslatedAutoSlugifyMixin, TranslationHelperMixin,
         verbose_name = _('category')
         verbose_name_plural = _('categories')
 
-    objects = CategoryManager()
-
     def delete(self, **kwargs):
-        #
-        # We're managing how the two superclasses (TranslateableModel and
-        # NS_Node) perform deletion together here.
-        #
         # INFO: There currently is a bug in parler where it will pass along
         #       'using' as a positional argument, which does not work in
         #       Djangos implementation. So we skip it.
