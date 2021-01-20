@@ -19,7 +19,6 @@ from .cms_appconfig import NewsBlogConfig
 from .models import Article
 from .utils.utilities import get_person_by_user_model_instance
 from .utils.utilities import is_valid_namespace
-from treebeard.forms import movenodeform_factory, MoveNodeForm
 from .models import Category
 
 
@@ -129,7 +128,7 @@ class CategoryWizard(Wizard):
         return None
 
 
-class CreateCategoryForm(BaseFormMixin, TranslatableModelForm, MoveNodeForm):
+class CreateCategoryForm(BaseFormMixin, TranslatableModelForm):
     """
     The model form for Category wizard.
     """
@@ -142,7 +141,7 @@ class CreateCategoryForm(BaseFormMixin, TranslatableModelForm, MoveNodeForm):
 aldryn_category_wizard = CategoryWizard(
     title=_('New category'),
     weight=290,
-    form=movenodeform_factory(Category, form=CreateCategoryForm),
+    form=CreateCategoryForm,
     description=_('Create a new category.')
 )
 

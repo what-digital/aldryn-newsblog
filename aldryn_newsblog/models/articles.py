@@ -3,10 +3,10 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connection, models
+from django.db.models import ManyToManyField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
-from django.utils import translation
 from django.utils.encoding import force_text
 from django.utils.timezone import now
 from django.utils.translation import override, ugettext
@@ -17,7 +17,6 @@ from cms.models.pluginmodel import CMSPlugin
 from cms.utils.i18n import get_current_language, get_redirect_on_fallback
 
 from aldryn_apphooks_config.fields import AppHookConfigField
-from aldryn_newsblog import fields as newsblog_fields
 from aldryn_people.models import Person
 from aldryn_translation_tools.models import (
     TranslatedAutoSlugifyMixin, TranslationHelperMixin,
@@ -123,9 +122,9 @@ class Article(TranslatedAutoSlugifyMixin,
         help_text='',
     )
 
-    categories = newsblog_fields.CategoryManyToManyField('aldryn_newsblog.Category',
-                                         verbose_name=_('categories'),
-                                         blank=True)
+    categories = ManyToManyField('aldryn_newsblog.Category',
+                                 verbose_name=_('categories'),
+                                 blank=True)
 
     publishing_date = models.DateTimeField(_('publishing date'),
                                            default=now)

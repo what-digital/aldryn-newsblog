@@ -20,6 +20,5 @@ class Form(forms.BaseForm):
             'filer',
             'sortedm2m',
             'taggit',
-            'treebeard'
         ])
         return settings

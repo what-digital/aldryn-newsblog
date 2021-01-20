@@ -11,5 +11,3 @@ from .articles import NewsBlogRelatedPlugin
 from .articles import NewsBlogTagsPlugin
 from .articles import PluginEditModeMixin
 from .categoreis import Category
-from .categoreis import CategoryManager
-from .categoreis import CategoryQuerySet
