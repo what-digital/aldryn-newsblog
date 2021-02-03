@@ -151,12 +151,17 @@ class NewsBlogConfig(TranslatableModel, AppHookConfig):
         related_name='aldryn_newsblog_detail_footer',
     )
 
+    @staticmethod
+    def has_placeholder_change_permission(user) -> bool:
+        return user.has_perm('aldryn_newsblog.can_edit_section_placeholder')
+
     def get_app_title(self):
         return getattr(self, 'app_title', _('untitled'))
 
     class Meta:
         verbose_name = _('Section')
         verbose_name_plural = _('Sections')
+        permissions = (("can_edit_blog_placeholder", "Can edit Section placeholders"),)
 
     def __str__(self):
         return self.safe_translation_getter('app_title')
