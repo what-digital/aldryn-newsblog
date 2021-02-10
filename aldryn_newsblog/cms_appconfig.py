@@ -161,7 +161,7 @@ class NewsBlogConfig(TranslatableModel, AppHookConfig):
     class Meta:
         verbose_name = _('Section')
         verbose_name_plural = _('Sections')
-        permissions = (("can_edit_blog_placeholder", "Can edit Section placeholders"),)
+        permissions = (("can_edit_section_placeholder", "Can edit Section placeholders"),)
 
     def __str__(self):
         return self.safe_translation_getter('app_title')
