@@ -6,7 +6,7 @@ from aldryn_newsblog.models import Category
 
 
 class CategoryAdmin(TranslatableAdmin):
-
+    list_display = ('name', 'newsblog_config')
     fieldsets = (
         (None, {
             'fields': (
