@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.11 (2021-04-21)
+==================
+
+* Added a new "Author" model and ability to override existing author field with it
+
+
 2.2.3.5 (2020-09-22)
 ==================
 
