@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connection, models
-from django.db.models import ManyToManyField
+from django.db.models import ManyToManyField, Count, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -11,6 +11,7 @@ from django.utils.encoding import force_text
 from django.utils.timezone import now
 from django.utils.translation import override, ugettext
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError
 
 from cms.models.fields import PlaceholderField
 from cms.models.pluginmodel import CMSPlugin
@@ -113,8 +114,16 @@ class Article(TranslatedAutoSlugifyMixin,
         Person,
         null=True,
         blank=True,
+        verbose_name='Author (Django CMS User)',
+        on_delete=models.SET_NULL,
+        help_text=_("Only used if AUTHOR is not set.")
+    )
+    author_override = models.ForeignKey(
+        'Author',
+        null=True,
+        blank=True,
         verbose_name=_('author'),
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
     )
     app_config = AppHookConfigField(
         NewsBlogConfig,
@@ -255,6 +264,50 @@ class Article(TranslatedAutoSlugifyMixin,
             default_language = settings.LANGUAGE_CODE
             return self.safe_translation_getter('title', language_code=default_language, any_language=True)
 
+    def get_author(self):
+        return self.author_override or self.author
+
+    def clean(self):
+        if not self.author_override and not self.author:
+            raise ValidationError(
+                _("You must specify either AUTHOR or AUTHOR (DJANGO CMS USER)."),
+                code='missing'
+            )
+
+
+class Author(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(
+        verbose_name=_('slug'),
+        max_length=255,
+        db_index=True,
+        blank=True,
+        help_text=_(
+            'Used in the URL. If changed, the URL will change. '
+            'Clear it to have it re-created automatically.'),
+    )
+    function = models.CharField(max_length=255, blank=True, default='')
+    visual = FilerImageField(
+        null=True,
+        blank=True,
+        default=None,
+        on_delete=models.SET_NULL,
+        related_name='author_override'
+    )
+    app_config = models.ForeignKey(
+        NewsBlogConfig,
+        verbose_name=_('Apphook configuration'),
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        unique_together = [
+            ['slug', 'app_config']
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
 
 class PluginEditModeMixin(object):
     def get_edit_mode(self, request):
@@ -329,13 +382,23 @@ class NewsBlogArticleSearchPlugin(NewsBlogCMSPlugin):
 class NewsBlogAuthorsPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
     def get_authors(self, request):
         """
-        Returns a queryset of authors (people who have published an article),
+        Returns a list of authors (people who have published an article),
         annotated by the number of articles (article_count) that are visible to
         the current user. If this user is anonymous, then this will be all
         articles that are published and whose publishing_date has passed. If the
         user is a logged-in cms operator, then it will be all articles.
         """
 
+        aldryn_authors = self.get_aldryn_authors(request)
+        author_overrides = self.get_author_overrides(request)
+        combined_authors = self.combine_authors_without_duplicates(
+            aldryn_authors, author_overrides
+        )
+        return sorted(
+            combined_authors, key=lambda x: x.article_count, reverse=True
+        )
+
+    def get_aldryn_authors(self, request):
         # The basic subquery (for logged-in content managers in edit mode)
         subquery = """
             SELECT COUNT(*)
@@ -343,6 +406,7 @@ class NewsBlogAuthorsPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
             WHERE
                 aldryn_newsblog_article.author_id =
                     aldryn_people_person.id AND
+                    aldryn_newsblog_article.author_override_id IS NULL AND
                 aldryn_newsblog_article.app_config_id = %d"""
 
         # For other users, limit subquery to published articles
@@ -360,7 +424,36 @@ class NewsBlogAuthorsPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
 
         raw_authors = list(Person.objects.raw(query))
         authors = [author for author in raw_authors if author.article_count]
-        return sorted(authors, key=lambda x: x.article_count, reverse=True)
+        return authors
+
+    def get_author_overrides(self, request) -> list:
+        if self.get_edit_mode(request):
+            authors_qs = Author.objects.all().annotate(
+                article_count=Count('article')
+            )
+        else:
+            authors_qs = Author.objects.filter(
+                article__is_published=True,
+                article__publishing_date__lte=now()
+            ).annotate(
+                article_count=Count('article')
+            ).filter(article_count__gt=0, app_config=self.app_config)
+
+        return list(authors_qs)
+
+    @staticmethod
+    def combine_authors_without_duplicates(aldryn_authors, author_overrides):
+        authors_combined_dict = {
+            author.slug: author for author in author_overrides
+        }
+        for aldryn_author in aldryn_authors:
+            if not aldryn_author.slug in authors_combined_dict:
+                authors_combined_dict[aldryn_author.slug] = aldryn_author
+            else:
+                authors_combined_dict[
+                    aldryn_author.slug
+                ].article_count += aldryn_author.article_count
+        return list(authors_combined_dict.values())
 
     def __str__(self):
         return ugettext('%s authors') % (self.app_config.get_app_title(), )

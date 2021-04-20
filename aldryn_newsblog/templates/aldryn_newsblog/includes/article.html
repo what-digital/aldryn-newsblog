@@ -30,7 +30,7 @@
 
     <p>{{ article.publishing_date|date }}</p>
 
-    {% include "aldryn_newsblog/includes/author.html" with author=article.author %}
+    {% include "aldryn_newsblog/includes/author.html" with author=article.get_author %}
 
     {% if article.tags %}
         <p>

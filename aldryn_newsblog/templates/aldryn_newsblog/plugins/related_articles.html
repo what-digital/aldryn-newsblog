@@ -6,8 +6,8 @@
             <li>
                 <h3><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></h3>
                 <p>
-                    {% if article.author %}
-                        {% trans "by" %} <a href="#">{{ article.author }}</a>
+                    {% if article.get_author %}
+                        {% trans "by" %} <a href="#">{{ article.get_author }}</a>
                     {% endif %}
                     {{ article.publishing_date|date }}
                 </p>
