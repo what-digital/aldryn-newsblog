@@ -24,7 +24,7 @@ from taggit.models import Tag
 from aldryn_newsblog.compat import toolbar_edit_mode_active
 from aldryn_newsblog.utils.utilities import get_valid_languages_from_request
 from .models import Article
-from .models import Category
+from .models import Category, Author
 from .utils import add_prefix_to_path
 
 
@@ -304,18 +304,27 @@ class ArticleSearchResultsList(ArticleListBase):
 class AuthorArticleList(ArticleListBase):
     """A list of articles written by a specific author."""
     def get_queryset(self):
-        # Note: each Article.author is Person instance with guaranteed
-        # presence of unique slug field, which allows to use it in URLs
-        return super(AuthorArticleList, self).get_queryset().filter(
+        author_override_matches_q = Q(
+            author_override__isnull=False, author_override=self.author_override
+        )
+        author_matches_q = Q(
+            author_override__isnull=True,
+            author__isnull=False,
             author=self.author
+        )
+        return super(AuthorArticleList, self).get_queryset().filter(
+            author_override_matches_q | author_matches_q
         )
 
     def get(self, request, author, *args, **kwargs):
         language = translation.get_language_from_request(
             request, check_path=True)
+        self.author_override = Author.objects.filter(
+            slug=author, app_config=self.config
+        ).first()
         self.author = Person.objects.language(language).active_translations(
             language, slug=author).first()
-        if not self.author:
+        if not self.author_override and not self.author:
             raise Http404('Author not found')
         return super(AuthorArticleList, self).get(request, *args, **kwargs)
 

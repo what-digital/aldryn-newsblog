@@ -10,4 +10,5 @@ from .articles import NewsBlogLatestArticlesPlugin
 from .articles import NewsBlogRelatedPlugin
 from .articles import NewsBlogTagsPlugin
 from .articles import PluginEditModeMixin
+from .articles import Author
 from .categoreis import Category

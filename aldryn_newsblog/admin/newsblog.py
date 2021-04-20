@@ -138,6 +138,7 @@ class ArticleAdmin(
         (None, {
             'fields': (
                 'title',
+                'author_override',
                 'author',
                 'publishing_date',
                 'is_published',
@@ -278,3 +279,10 @@ class NewsBlogConfigAdmin(
 
 
 admin.site.register(NewsBlogConfig, NewsBlogConfigAdmin)
+
+
+class AuthorAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('name',), }
+
+
+admin.site.register(models.Author, AuthorAdmin)
