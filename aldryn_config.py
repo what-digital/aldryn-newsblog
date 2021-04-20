@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from aldryn_client import forms
 
 
@@ -20,5 +19,8 @@ class Form(forms.BaseForm):
             'filer',
             'sortedm2m',
             'taggit',
+            'treebeard',
+            # fix for https://github.com/what-digital/aldryn-newsblog/issues/7
+            'aldryn_categories',
         ])
         return settings
