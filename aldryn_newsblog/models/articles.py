@@ -410,7 +410,8 @@ class NewsBlogAuthorsPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
                 aldryn_newsblog_article.app_config_id = %d"""
 
         # For other users, limit subquery to published articles
-        if not self.get_edit_mode(request):
+        user_can_edit = request.user.is_staff or request.user.is_superuser
+        if not self.get_edit_mode(request) or user_can_edit:
             subquery += """ AND
                 aldryn_newsblog_article.is_published %s AND
                 aldryn_newsblog_article.publishing_date <= %s
@@ -427,7 +428,8 @@ class NewsBlogAuthorsPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
         return authors
 
     def get_author_overrides(self, request) -> list:
-        if self.get_edit_mode(request):
+        user_can_edit = request.user.is_staff or request.user.is_superuser
+        if self.get_edit_mode(request) or user_can_edit:
             authors_qs = Author.objects.all().annotate(
                 article_count=Count('article')
             )
