@@ -332,7 +332,7 @@ class AuthorArticleList(ArticleListBase):
         return self.get(request, author, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        kwargs['newsblog_author'] = self.author
+        kwargs['newsblog_author'] = self.author_override or self.author
         return super(AuthorArticleList, self).get_context_data(**kwargs)
 
 
