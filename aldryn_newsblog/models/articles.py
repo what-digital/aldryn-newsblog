@@ -411,7 +411,7 @@ class NewsBlogAuthorsPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
 
         # For other users, limit subquery to published articles
         user_can_edit = request.user.is_staff or request.user.is_superuser
-        if not self.get_edit_mode(request) or user_can_edit:
+        if not self.get_edit_mode(request) and not user_can_edit:
             subquery += """ AND
                 aldryn_newsblog_article.is_published %s AND
                 aldryn_newsblog_article.publishing_date <= %s
