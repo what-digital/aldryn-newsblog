@@ -46,11 +46,32 @@ class LatestArticlesFeed(Feed):
     def item_title(self, item):
         return item.title
 
+    def item_pubdate(self, item):
+        return item.publishing_date
+
+    @staticmethod
+    def get_image_url(image_url_path):
+        domain = Site.objects.get_current().domain
+        return 'http://' + domain + image_url_path
+
     def item_description(self, item):
         return item.lead_in
 
-    def item_pubdate(self, item):
-        return item.publishing_date
+    def item_author_name(self, item):
+        author = item.get_author()
+        if author:
+            return author.name
+
+    def item_enclosures(self, item):
+        from django.utils import feedgenerator
+
+        if item.featured_image:
+            return [
+                feedgenerator.Enclosure(
+                    self.get_image_url(item.featured_image.url),
+                    str(item.featured_image.size),
+                    'image/{}'.format(item.featured_image.url.split('.')[-1]))
+            ]
 
 
 class TagFeed(LatestArticlesFeed):
