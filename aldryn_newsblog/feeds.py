@@ -6,6 +6,7 @@ from django.contrib.syndication.views import Feed
 from django.urls import reverse
 from django.utils.translation import get_language_from_request
 from django.utils.translation import ugettext as _
+from django.utils import feedgenerator
 
 from aldryn_apphooks_config.utils import get_app_instance
 
@@ -17,6 +18,7 @@ from aldryn_newsblog.utils.utilities import get_valid_languages
 class LatestArticlesFeed(Feed):
 
     def __call__(self, request, *args, **kwargs):
+        self.request = request
         self.namespace, self.config = get_app_instance(request)
         language = get_language_from_request(request)
         site_id = getattr(get_current_site(request), 'id', None)
@@ -49,11 +51,6 @@ class LatestArticlesFeed(Feed):
     def item_pubdate(self, item):
         return item.publishing_date
 
-    @staticmethod
-    def get_image_url(image_url_path):
-        domain = Site.objects.get_current().domain
-        return 'http://' + domain + image_url_path
-
     def item_description(self, item):
         return item.lead_in
 
@@ -63,14 +60,13 @@ class LatestArticlesFeed(Feed):
             return author.name
 
     def item_enclosures(self, item):
-        from django.utils import feedgenerator
-
         if item.featured_image:
             return [
                 feedgenerator.Enclosure(
-                    self.get_image_url(item.featured_image.url),
+                    self.request.build_absolute_uri(item.featured_image.url),
                     str(item.featured_image.size),
-                    'image/{}'.format(item.featured_image.url.split('.')[-1]))
+                    'image/{}'.format(item.featured_image.extension)
+                )
             ]
 
 
