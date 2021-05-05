@@ -176,6 +176,7 @@ class ArticleAdmin(
     app_config_selection_desc = ''
 
     def get_form(self, request, obj=None, **kwargs):
+        self._article_instance = obj if obj else None
         form = super().get_form(request, obj=obj, **kwargs)
         form.request_data = request.GET.copy()
         return form
@@ -212,7 +213,20 @@ class ArticleAdmin(
         if not request.user.is_superuser:
             if db_field.name == "app_config":
                 kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
+        if db_field.name == "author_override":
+            self._limit_author_queryset_if_needed(request, kwargs)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def _limit_author_queryset_if_needed(self, request, kwargs):
+        app_config_id = self._get_app_config_id(request)
+        if app_config_id:
+            kwargs["queryset"] = models.Author.objects.filter(app_config_id=app_config_id)
+
+    def _get_app_config_id(self, request):
+        if self._article_instance and self._article_instance.app_config:
+            return self._article_instance.app_config.id
+        elif 'app_config' in request.GET:
+            return request.GET['app_config']
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if not request.user.is_superuser:
