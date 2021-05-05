@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.15 (2021-05-05)
+==================
+
+* Author list plugin showing only authors of current section
+
+
 2.2.3.14 (2021-05-05)
 ==================
 
