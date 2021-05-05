@@ -430,17 +430,15 @@ class NewsBlogAuthorsPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
     def get_author_overrides(self, request) -> list:
         user_can_edit = request.user.is_staff or request.user.is_superuser
         if self.get_edit_mode(request) or user_can_edit:
-            authors_qs = Author.objects.all().annotate(
-                article_count=Count('article')
-            )
+            authors_qs = Author.objects.all()
         else:
             authors_qs = Author.objects.filter(
                 article__is_published=True,
                 article__publishing_date__lte=now()
-            ).annotate(
-                article_count=Count('article')
-            ).filter(article_count__gt=0, app_config=self.app_config)
-
+            )
+        authors_qs = authors_qs.annotate(article_count=Count('article')).filter(
+            article_count__gt=0, app_config=self.app_config
+        )
         return list(authors_qs)
 
     @staticmethod
