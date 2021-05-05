@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.14 (2021-05-05)
+==================
+
+* Limiting author selection by section in article admin cpanel
+
+
 2.2.3.11 (2021-04-21)
 ==================
 
