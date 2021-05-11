@@ -306,5 +306,11 @@ admin.site.register(NewsBlogConfig, NewsBlogConfigAdmin)
 class AuthorAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',), }
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(app_config__site=request.site)
+
 
 admin.site.register(models.Author, AuthorAdmin)
