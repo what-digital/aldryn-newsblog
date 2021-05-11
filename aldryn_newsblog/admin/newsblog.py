@@ -229,10 +229,16 @@ class ArticleAdmin(
             return request.GET['app_config']
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if not request.user.is_superuser:
-            if db_field.name == "categories":
-                kwargs["queryset"] = Category.objects.filter(newsblog_config__site=request.site)
+        if db_field.name == "categories":
+            self._limit_categories_queryset_if_needed(request, kwargs)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    def _limit_categories_queryset_if_needed(self, request, kwargs):
+        app_config_id = self._get_app_config_id(request)
+        if app_config_id:
+            kwargs['queryset'] = Category.objects.filter(newsblog_config_id=app_config_id)
+        else:
+            kwargs['queryset'] = Category.objects.filter(newsblog_config__site=request.site)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
