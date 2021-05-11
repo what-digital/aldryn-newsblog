@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.18 (2021-11-05)
+==================
+
+* Limited authors queryset by site in admin cpanel list
+
+
 2.2.3.17 (2021-11-05)
 ==================
 
