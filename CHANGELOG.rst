@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.17 (2021-11-05)
+==================
+
+* Limited categories queryset by app config of the blog article
+
+
 2.2.3.16 (2021-11-05)
 ==================
 
