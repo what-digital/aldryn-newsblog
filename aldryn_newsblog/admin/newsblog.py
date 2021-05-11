@@ -214,13 +214,15 @@ class ArticleAdmin(
             if db_field.name == "app_config":
                 kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
         if db_field.name == "author_override":
-            self._limit_author_queryset_if_needed(request, kwargs)
+            self._limit_author_queryset(request, kwargs)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
-    def _limit_author_queryset_if_needed(self, request, kwargs):
+    def _limit_author_queryset(self, request, kwargs):
         app_config_id = self._get_app_config_id(request)
         if app_config_id:
             kwargs["queryset"] = models.Author.objects.filter(app_config_id=app_config_id)
+        else:
+            kwargs["queryset"] = models.Author.objects.filter(app_config__site=request.site)
 
     def _get_app_config_id(self, request):
         if self._article_instance and self._article_instance.app_config:
@@ -230,10 +232,10 @@ class ArticleAdmin(
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "categories":
-            self._limit_categories_queryset_if_needed(request, kwargs)
+            self._limit_categories_queryset(request, kwargs)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
-    def _limit_categories_queryset_if_needed(self, request, kwargs):
+    def _limit_categories_queryset(self, request, kwargs):
         app_config_id = self._get_app_config_id(request)
         if app_config_id:
             kwargs['queryset'] = Category.objects.filter(newsblog_config_id=app_config_id)
