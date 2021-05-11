@@ -65,9 +65,14 @@ class LatestArticlesFeed(Feed):
                 feedgenerator.Enclosure(
                     self.request.build_absolute_uri(item.featured_image.url),
                     str(item.featured_image.size),
-                    'image/{}'.format(item.featured_image.extension)
+                    self.get_image_content_type(item.featured_image),
                 )
             ]
+
+    def get_image_content_type(self, featured_image):
+        extension = featured_image.extension
+        image_type = 'jpeg' if extension == 'jpg' else extension
+        return 'image/{}'.format(image_type)
 
 
 class TagFeed(LatestArticlesFeed):
