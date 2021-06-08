@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.19 (2021-08-06)
+==================
+
+* Adding author instance to article before form validation on new article wizard
+
+
 2.2.3.18 (2021-11-05)
 ==================
 
