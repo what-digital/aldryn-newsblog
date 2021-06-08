@@ -90,11 +90,10 @@ class CreateNewsBlogArticleForm(BaseFormMixin, TranslatableModelForm):
         if len(app_configs) < 2:
             self.fields['app_config'].widget = forms.HiddenInput()
             self.fields['app_config'].initial = app_configs[0].pk
+        self.instance.author = get_person_by_user_model_instance(user=self.user)
 
     def save(self, commit=True):
-        article = super(CreateNewsBlogArticleForm, self).save(commit=False)
-        article.author = get_person_by_user_model_instance(user=self.user)
-        article.save()
+        article = super(CreateNewsBlogArticleForm, self).save()
 
         # If 'content' field has value, create a TextPlugin with same and add it to the PlaceholderField
         content = clean_html(self.cleaned_data.get('content', ''), False)
