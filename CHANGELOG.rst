@@ -8,73 +8,73 @@ Changelog
 
 
 2.2.3.19 (2021-08-06)
-==================
+=====================
 
 * Adding author instance to article before form validation on new article wizard
 
 
 2.2.3.18 (2021-11-05)
-==================
+=====================
 
 * Limited authors queryset by site in admin cpanel list
 
 
 2.2.3.17 (2021-11-05)
-==================
+=====================
 
 * Limited categories queryset by app config of the blog article
 
 
 2.2.3.16 (2021-11-05)
-==================
+=====================
 
 * RSS displaying images
 
 
 2.2.3.15 (2021-05-05)
-==================
+=====================
 
 * Author list plugin showing only authors of current section
 
 
 2.2.3.14 (2021-05-05)
-==================
+=====================
 
 * Limiting author selection by section in article admin cpanel
 
 
 2.2.3.11 (2021-04-21)
-==================
+=====================
 
 * Added a new "Author" model and ability to override existing author field with it
 
 
 2.2.3.5 (2020-09-22)
-==================
+====================
 
 * Added a new "Category" model and implemented the way to migrate all the old Article's relations
 
 
 2.2.3.4 (2020-09-09)
-==================
+====================
 
 * Make the person field optional
 
 
 2.2.3.3 (2020-06-30)
-==================
+====================
 
 * Add multisite support integration
 
 
 2.2.3.2 (2020-06-30)
-==================
+====================
 
 * Add another render_placeholder_no_cache template tag
 
 
 2.2.3.1 (2020-03-10)
-==================
+====================
 
 * Update the urls regex to fix the issue
 
@@ -228,27 +228,27 @@ Changelog
 ==================
 
 * Add Django 1.9 compatibility
-* Add stripped default django templates to `/aldryn_newsblog/templates`
+* Add stripped default django templates to ``/aldryn_newsblog/templates``
 * Newly created articles are not published by default
 * UX admin interface improvements
 
 
 1.0.12 (2016-01-12)
-==================
+===================
 
 * Updates for recent versions of django-reversion
 * Adds integration tests against CMS v3.2
 
 
 1.0.11 (2016-01-09)
-==================
+===================
 
 * Adds support for reversion with wizards
 * Cleans-up and updates test configuration
 
 
 1.0.10 (2015-11-20)
-==================
+===================
 
 * Fixes CMS 3.2 wizard
 * Fixes issue with lazy translations
