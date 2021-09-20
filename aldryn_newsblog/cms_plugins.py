@@ -190,6 +190,16 @@ class NewsBlogRelatedPlugin(AdjustableCacheMixin, NewsBlogPlugin):
             context['article_list'] = instance.get_articles(article, request)
         return context
 
+    def get_render_template(self, context, instance, placeholder):
+        request = context.get('request')
+        article = self.get_article(request)
+        if (article and article.app_config.template_prefix):
+            return add_prefix_to_path(
+                self.render_template,
+                article.app_config.template_prefix
+            )
+        return self.render_template
+
 
 @plugin_pool.register_plugin
 class NewsBlogTagsPlugin(NewsBlogPlugin):

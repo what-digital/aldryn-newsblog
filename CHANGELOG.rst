@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.20 (2021-09-20)
+=====================
+
+* Fix ``get_render_template`` for ``NewsBlogRelatedPlugin``
+
+
 2.2.3.19 (2021-08-06)
 ==================
 
