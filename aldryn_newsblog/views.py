@@ -247,7 +247,7 @@ class ArticleList(ArticleListBase):
             featured_qs = Article.objects.all().filter(is_featured=True)
             if not self.edit_mode:
                 featured_qs = featured_qs.published()
-            exclude_featured = featured_qs[:exclude_count].values_list('pk')
+            exclude_featured = list(featured_qs.values_list('pk'))[:exclude_count]
             qs = qs.exclude(pk__in=exclude_featured)
         return qs
 

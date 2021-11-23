@@ -568,8 +568,8 @@ class NewsBlogLatestArticlesPlugin(PluginEditModeMixin,
             app_config=self.app_config)
         featured_qs = featured_qs.translated(*languages).filter(
             app_config=self.app_config)
-        exclude_featured = featured_qs.values_list(
-            'pk', flat=True)[:self.exclude_featured]
+        exclude_featured = list(featured_qs.values_list(
+            'pk', flat=True))[:self.exclude_featured]
         queryset = queryset.exclude(pk__in=list(exclude_featured))
         return queryset[:self.latest_articles]
 
