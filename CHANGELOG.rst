@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.2.3.21 (2021-11-23)
+=====================
+
+* MySQL support for exclude_featured articles functionality
+
 2.2.3.20 (2021-09-20)
 =====================
 
