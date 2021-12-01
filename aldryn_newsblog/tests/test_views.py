@@ -559,7 +559,7 @@ class TestIndex(NewsBlogTestCase):
                                       title='a title')
         article.categories.add()
         for tag_name in ('tag 1', 'tag2'):
-            article.tags.add(tag_name)
+            article.add_tag(tag_name)
         for category in (self.category1, self.category2):
             article.categories.add(category)
         article.update_search_on_save = True
@@ -587,7 +587,7 @@ class TestIndex(NewsBlogTestCase):
             content=content0, lead_in=u'lead in text', title=u'second title')
         for article in (article_1, article_2):
             for tag_name in ('tag 1', 'tag2'):
-                article.tags.add(tag_name)
+                article.add_tag(tag_name)
             for category in (self.category1, self.category2):
                 article.categories.add(category)
         with switch_language(article_2, 'de'):
@@ -652,7 +652,7 @@ class ViewLanguageFallbackMixin(object):
             )
         if categories:
             de_article.categories.set(categories)
-        de_article.tags.add('tag1')
+        de_article.add_tags('tag1')
         de_article.save()
         return de_article
 
@@ -673,7 +673,7 @@ class ViewLanguageFallbackMixin(object):
                                               app_config=app_config)
                 if categories:
                     article.categories.set(categories)
-                article.tags.add('tag1')
+                article.add_tag('tag1')
                 article.save()
                 articles.append(article)
         return articles

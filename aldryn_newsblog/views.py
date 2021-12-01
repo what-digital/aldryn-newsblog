@@ -19,11 +19,10 @@ from django.views.generic.detail import DetailView
 from menus.utils import set_language_changer
 from parler.views import TranslatableSlugMixin
 from parler.views import ViewUrlMixin
-from taggit.models import Tag
 
 from aldryn_newsblog.compat import toolbar_edit_mode_active
 from aldryn_newsblog.utils.utilities import get_valid_languages_from_request
-from .models import Article
+from .models import Article, ArticleTag
 from .models import Category, Author
 from .utils import add_prefix_to_path
 
@@ -362,11 +361,13 @@ class TagArticleList(ArticleListBase):
     """A list of articles filtered by tags."""
     def get_queryset(self):
         return super(TagArticleList, self).get_queryset().filter(
-            tags=self.tag
+            article_tags=self.tag
         )
 
     def get(self, request, tag, *args, **kwargs):
-        self.tag = get_object_or_404(Tag, slug=tag)
+        self.tag = get_object_or_404(
+            ArticleTag, translations__slug=tag, newsblog_config=self.config
+        )
         return super(TagArticleList, self).get(request, *args, **kwargs)
 
     def post(self, request, tag, *args, **kwargs):

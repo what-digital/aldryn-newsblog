@@ -12,7 +12,6 @@ from django.utils.timezone import now
 from aldryn_apphooks_config.managers.base import ManagerMixin, QuerySetMixin
 from aldryn_people.models import Person
 from parler.managers import TranslatableManager, TranslatableQuerySet
-from taggit.models import Tag, TaggedItem
 
 from aldryn_newsblog.compat import toolbar_edit_mode_active
 
@@ -94,6 +93,8 @@ class RelatedManager(ManagerMixin, TranslatableManager):
 
         Return list of Tag objects ordered by custom 'num_articles' attribute.
         """
+        from aldryn_newsblog.models import ArticleTag
+
         if (request and hasattr(request, 'toolbar') and  # noqa: #W504
                 request.toolbar and toolbar_edit_mode_active(request)):
             articles = self.namespace(namespace)
@@ -102,17 +103,9 @@ class RelatedManager(ManagerMixin, TranslatableManager):
         if not articles:
             # return empty iterable early not to perform useless requests
             return []
-        kwargs = TaggedItem.bulk_lookup_kwargs(articles)
 
-        # aggregate and sort
-        counted_tags = dict(TaggedItem.objects
-                            .filter(**kwargs)
-                            .values('tag')
-                            .annotate(tag_count=models.Count('tag'))
-                            .values_list('tag', 'tag_count'))
-
-        # and finally get the results
-        tags = Tag.objects.filter(pk__in=counted_tags.keys())
-        for tag in tags:
-            tag.num_articles = counted_tags[tag.pk]
-        return sorted(tags, key=attrgetter('num_articles'), reverse=True)
+        return ArticleTag.objects.annotate(
+            article_count=Count(
+                'article', filter=Q(article__in=articles)
+            )
+        ).filter(article_count__gt=0).order_by('-article_count')

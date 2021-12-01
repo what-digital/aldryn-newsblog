@@ -1,5 +1,6 @@
 from .articles import AdjustableCacheModelMixin
 from .articles import Article
+from .articles import ArticleTag
 from .articles import NewsBlogArchivePlugin
 from .articles import NewsBlogArticleSearchPlugin
 from .articles import NewsBlogAuthorsPlugin

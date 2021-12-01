@@ -37,9 +37,9 @@
 
     {% include "aldryn_newsblog/includes/author.html" with author=article.get_author %}
 
-    {% if article.tags and detail_view %}
+    {% if article.article_tags.all and detail_view %}
         <p class="tags">
-            {% for tag in article.tags.all %}
+            {% for tag in article.article_tags.all %}
                 <a href="{% namespace_url 'article-list-by-tag' tag=tag.slug namespace=namespace default='' %}">{{ tag.name }}</a>
             {% endfor %}
         </p>

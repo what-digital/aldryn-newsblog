@@ -11,7 +11,7 @@ from parler.forms import TranslatableModelForm
 
 from aldryn_newsblog import models
 from aldryn_newsblog.cms_appconfig import NewsBlogConfig
-from aldryn_newsblog.models import Category
+from aldryn_newsblog.models import Article, ArticleTag, Category
 from aldryn_newsblog.utils.utilities import get_person_by_user_model_instance
 
 
@@ -63,7 +63,7 @@ class ArticleAdminForm(TranslatableModelForm):
             'meta_title',
             'related',
             'slug',
-            'tags',
+            'article_tags',
             'title',
         ]
 
@@ -159,7 +159,7 @@ class ArticleAdmin(
         (_('Advanced Settings'), {
             'classes': ('collapse',),
             'fields': (
-                'tags',
+                'article_tags',
                 'categories',
                 'related',
             )
@@ -167,7 +167,7 @@ class ArticleAdmin(
     )
 
     filter_horizontal = [
-        'categories',
+        'categories', 'article_tags'
     ]
     app_config_values = {
         'default_published': 'is_published'
@@ -233,6 +233,8 @@ class ArticleAdmin(
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "categories":
             self._limit_categories_queryset(request, kwargs)
+        elif db_field.name == "article_tags":
+            self._limit_article_tags_queryset(request, kwargs)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def _limit_categories_queryset(self, request, kwargs):
@@ -241,6 +243,13 @@ class ArticleAdmin(
             kwargs['queryset'] = Category.objects.filter(newsblog_config_id=app_config_id)
         else:
             kwargs['queryset'] = Category.objects.filter(newsblog_config__site=request.site)
+
+    def _limit_article_tags_queryset(self, request, kwargs):
+        app_config_id = self._get_app_config_id(request)
+        if app_config_id:
+            kwargs['queryset'] = ArticleTag.objects.filter(newsblog_config_id=app_config_id)
+        else:
+            kwargs['queryset'] = ArticleTag.objects.filter(newsblog_config__site=request.site)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -313,4 +322,30 @@ class AuthorAdmin(admin.ModelAdmin):
         return qs.filter(app_config__site=request.site)
 
 
+class ArticleTagAdmin(TranslatableAdmin):
+    list_display = ('name',)
+    fieldsets = (
+        (None, {
+            'fields': (
+                'name',
+                'slug',
+                'newsblog_config',
+            )
+        }),
+    )
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if not request.user.is_superuser:
+            if db_field.name == "newsblog_config":
+                kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(newsblog_config__site=request.site)
+
+
 admin.site.register(models.Author, AuthorAdmin)
+admin.site.register(models.ArticleTag, ArticleTagAdmin)

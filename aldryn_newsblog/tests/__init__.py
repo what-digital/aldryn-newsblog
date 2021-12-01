@@ -27,7 +27,7 @@ from aldryn_people.models import Person
 from parler.utils.context import switch_language
 
 from aldryn_newsblog.cms_apps import NewsBlogApp
-from aldryn_newsblog.models import Article
+from aldryn_newsblog.models import Article, ArticleTag
 from aldryn_newsblog.cms_appconfig import NewsBlogConfig
 from aldryn_newsblog.models import Category
 
@@ -131,9 +131,9 @@ class NewsBlogTestsMixin(object):
             for _ in range(num_articles):
                 article = self.create_article(**kwargs)
                 article.save()
-                article.tags.add(tag_name)
+                article.add_tag(tag_name)
                 tagged_articles.append(article)
-            tag_slug = tagged_articles[0].tags.slugs()[0]
+            tag_slug = tagged_articles[0].article_tags.all()[0].slug
             articles[tag_slug] = tagged_articles
         return articles
 

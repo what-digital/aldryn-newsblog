@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.2.3.22 (2021-12-01)
+=====================
+
+* Replaced taggit usage with a custom model with m2m realtionship for article tags
+
 2.2.3.21 (2021-11-23)
 =====================
 

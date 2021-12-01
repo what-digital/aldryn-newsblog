@@ -1,6 +1,6 @@
 import django.core.validators
 from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
+from django.utils.text import slugify
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connection, models
 from django.db.models import ManyToManyField, Count, Q
@@ -12,6 +12,7 @@ from django.utils.timezone import now
 from django.utils.translation import override, ugettext
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.utils.html import escape
 
 from cms.models.fields import PlaceholderField
 from cms.models.pluginmodel import CMSPlugin
@@ -158,8 +159,13 @@ class Article(TranslatedAutoSlugifyMixin,
     # which in the end causes to add reversed releted-to entry as well:
     #
     # https://github.com/django/django/blob/1.8.4/django/db/models/fields/related.py#L977
-    related = SortedManyToManyField('self', verbose_name=_('related articles'),
-                                    blank=True, symmetrical=False)
+    related = SortedManyToManyField(
+        'self', verbose_name=_('related articles'), blank=True, symmetrical=False
+    )
+
+    article_tags = ManyToManyField(
+        'ArticleTag', verbose_name=_('tags'), blank=True
+    )
 
     objects = RelatedManager()
 
@@ -239,7 +245,7 @@ class Article(TranslatedAutoSlugifyMixin,
         for category in self.categories.all():
             text_bits.append(
                 force_text(category.safe_translation_getter('name')))
-        for tag in self.tags.all():
+        for tag in self.article_tags.all():
             text_bits.append(force_text(tag.name))
         if self.content:
             plugins = self.content.cmsplugin_set.filter(language=language)
@@ -274,6 +280,24 @@ class Article(TranslatedAutoSlugifyMixin,
                 code='missing'
             )
 
+    def add_tag(self, tag_slug, tag_name=None):
+        cleaned_slug = slugify(tag_slug)
+        if not cleaned_slug in self.article_tags.all().values_list('translations__slug', flat=True):
+            article_tag = ArticleTag.objects.get_or_create(
+                translations__slug=cleaned_slug,
+                newsblog_config=self.app_config,
+                defaults={
+                    'slug': cleaned_slug,
+                    'name': tag_name or tag_slug,
+                    'newsblog_config': self.app_config,
+                }
+            )[0]
+            self.article_tags.add(article_tag)
+
+    def add_tags(self, tags):
+        for tag in tags:
+            self.add_tag(tag)
+
 
 class Author(models.Model):
     name = models.CharField(max_length=255)
@@ -307,6 +331,47 @@ class Author(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class ArticleTag(TranslatedAutoSlugifyMixin, TranslationHelperMixin, TranslatableModel):
+    slug_source_field_name = 'name'
+
+    translations = TranslatedFields(
+        name=models.CharField(
+            _('name'),
+            blank=False,
+            default='',
+            max_length=255,
+        ),
+        slug=models.SlugField(
+            _('slug'),
+            blank=True,
+            default='',
+            help_text=_('Provide a “slug” or leave blank for an automatically '
+                        'generated one.'),
+            max_length=255,
+        ),
+        meta={'unique_together': (('language_code', 'slug', ), )}
+    )
+
+    newsblog_config = models.ForeignKey(NewsBlogConfig, on_delete=models.PROTECT)
+
+    class Meta:
+        verbose_name = _('tag')
+        verbose_name_plural = _('tags')
+
+    def delete(self, **kwargs):
+        # INFO: There currently is a bug in parler where it will pass along
+        #       'using' as a positional argument, which does not work in
+        #       Djangos implementation. So we skip it.
+        self.__class__.objects.filter(pk=self.pk).delete(**kwargs)
+        from parler.cache import _delete_cached_translations
+        _delete_cached_translations(self)
+        models.Model.delete(self, **kwargs)
+
+    def __str__(self):
+        name = self.safe_translation_getter('name', any_language=True)
+        return escape(name)
 
 
 class PluginEditModeMixin(object):
@@ -619,31 +684,22 @@ class NewsBlogTagsPlugin(PluginEditModeMixin, NewsBlogCMSPlugin):
         then it will be all articles.
         """
 
-        article_content_type = ContentType.objects.get_for_model(Article)
+        return ArticleTag.objects.annotate(
+            article_count=Count(
+                'article', filter=self.get_article_filter(request)
+            )
+        ).filter(
+            newsblog_config_id=self.app_config.pk, article_count__gt=0
+        ).order_by('-article_count')
 
-        subquery = """
-            SELECT COUNT(*)
-            FROM aldryn_newsblog_article, taggit_taggeditem
-            WHERE
-                taggit_taggeditem.tag_id = taggit_tag.id AND
-                taggit_taggeditem.content_type_id = %d AND
-                taggit_taggeditem.object_id = aldryn_newsblog_article.id AND
-                aldryn_newsblog_article.app_config_id = %d"""
-
+    def get_article_filter(self, request):
         if not self.get_edit_mode(request):
-            subquery += """ AND
-                aldryn_newsblog_article.is_published %s AND
-                aldryn_newsblog_article.publishing_date <= %s
-            """ % (SQL_IS_TRUE, SQL_NOW_FUNC, )
-
-        query = """
-            SELECT (%s) as article_count, taggit_tag.*
-            FROM taggit_tag
-        """ % (subquery % (article_content_type.id, self.app_config.pk), )
-
-        raw_tags = list(Tag.objects.raw(query))
-        tags = [tag for tag in raw_tags if tag.article_count]
-        return sorted(tags, key=lambda x: x.article_count, reverse=True)
+            article_filter = Q(
+                article__is_published=True, article__publishing_date__lte=now()
+            )
+        else:
+            article_filter = Q()
+        return article_filter
 
     def __str__(self):
         return ugettext('%s tags') % (self.app_config.get_app_title(), )
