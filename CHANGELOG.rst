@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.2.3.23 (2021-12-13)
+=====================
+
+* Fixed exclude_featured articles functionality
+
 2.2.3.22 (2021-12-01)
 =====================
 
