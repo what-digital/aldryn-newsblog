@@ -3,6 +3,7 @@
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.syndication.views import Feed
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.translation import get_language_from_request
 from django.utils.translation import ugettext as _
@@ -11,7 +12,7 @@ from django.utils import feedgenerator
 from aldryn_apphooks_config.utils import get_app_instance
 
 from aldryn_newsblog.models import Category
-from aldryn_newsblog.models import Article
+from aldryn_newsblog.models import Article, ArticleTag
 from aldryn_newsblog.utils.utilities import get_valid_languages
 
 
@@ -80,8 +81,11 @@ class TagFeed(LatestArticlesFeed):
     def get_object(self, request, tag):
         return tag
 
-    def items(self, obj):
-        return self.get_queryset().filter(tags__slug=obj)[:10]
+    def items(self, tag_slug):
+        tag = get_object_or_404(
+            ArticleTag, translations__slug=tag_slug, newsblog_config=self.config
+        )
+        return self.get_queryset().filter(article_tags=tag)[:10]
 
 
 class CategoryFeed(LatestArticlesFeed):
