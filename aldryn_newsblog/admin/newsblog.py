@@ -323,7 +323,7 @@ class AuthorAdmin(admin.ModelAdmin):
 
 
 class ArticleTagAdmin(TranslatableAdmin):
-    list_display = ('name',)
+    list_display = ('name', 'newsblog_config',)
     fieldsets = (
         (None, {
             'fields': (
