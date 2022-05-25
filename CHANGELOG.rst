@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.2.3.25 (2022-05-25)
+=====================
+
+* Display NewsBlogConfig as column in the admin Tag list
+
 2.2.3.24 (2022-03-30)
 =====================
 
