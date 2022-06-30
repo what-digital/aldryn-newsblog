@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.2.3.26 (2022-06-30)
+=====================
+
+* Fixed ValueError in parsing of ``max_articles`` parameter
+
 2.2.3.25 (2022-05-25)
 =====================
 
@@ -9,7 +14,7 @@ Changelog
 2.2.3.24 (2022-03-30)
 =====================
 
-* Fixed latest articles feed of a tag view 
+* Fixed latest articles feed of a tag view
 
 2.2.3.23 (2021-12-13)
 =====================
