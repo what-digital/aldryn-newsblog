@@ -51,7 +51,10 @@ class NewsBlogMenu(CMSAttachMenu):
             if config is None:
                 config = article.app_config
 
-            trans = translations[article.pk]
+            try:
+                trans = translations[article.pk]
+            except KeyError:
+                continue
 
             try:
                 url = get_absolute_url(config, article, trans, language)
