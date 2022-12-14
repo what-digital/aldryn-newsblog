@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.contrib.admin.filters import RelatedFieldListFilter
 from django.forms import forms
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import PermissionDenied
 from parler.admin import TranslatableAdmin
 from parler.forms import TranslatableModelForm
 
@@ -70,23 +71,23 @@ class ArticleAdminForm(TranslatableModelForm):
     def __init__(self, *args, **kwargs):
         super(ArticleAdminForm, self).__init__(*args, **kwargs)
 
-        qs = models.Article.objects
+        related_qs = models.Article.objects
         if self.instance.app_config_id:
-            qs = models.Article.objects.filter(
+            related_qs = models.Article.objects.filter(
                 app_config=self.instance.app_config)
         elif 'initial' in kwargs and 'app_config' in kwargs['initial']:
-            qs = models.Article.objects.filter(
+            related_qs = models.Article.objects.filter(
                 app_config=kwargs['initial']['app_config'])
 
         if self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
+            related_qs = related_qs.exclude(pk=self.instance.pk)
 
         if 'related' in self.fields:
-            self.fields['related'].queryset = qs
+            self.fields['related'].queryset = related_qs
 
-        # Don't allow app_configs to be added here. The correct way to add an
-        # apphook-config is to create an apphook on a cms Page.
-        if 'app_config' in self.fields.keys():
+        if 'app_config' in self.fields:
+            # Don't allow app_configs to be added here. The correct way to add an
+            # apphook-config is to create an apphook on a cms Page.
             self.fields['app_config'].widget.can_add_related = False
         # Don't allow related articles to be added here.
         # doesn't makes much sense to add articles from another article other
@@ -111,7 +112,8 @@ class NewsBlogConfigFilter(RelatedFieldListFilter):
         choices = field.get_choices(
             include_blank=True,
             limit_choices_to={
-                'site': request.site
+                'pk__in': request.user.blog_sections.all().values_list('pk', flat=True),
+                'site': request.site,
             }
         )
         return choices
@@ -175,11 +177,41 @@ class ArticleAdmin(
     app_config_selection_title = ''
     app_config_selection_desc = ''
 
+    def save_model(self, request, obj, form, change):
+        app_config = self._get_appconfig_from_form_or_request(request, form)
+        if app_config:
+            obj.app_config = app_config
+        return super().save_model(request, obj, form, change)
+
     def get_form(self, request, obj=None, **kwargs):
         self._article_instance = obj if obj else None
+        if self._article_instance:
+            self._article_instance.app_config = NewsBlogConfig.objects.get(id= self._get_appconfig_id(request))
         form = super().get_form(request, obj=obj, **kwargs)
         form.request_data = request.GET.copy()
+        form._request = request
         return form
+
+    def _get_appconfig_from_form_or_request(self, request, form):
+        if 'app_config' in form.data.keys():
+            app_config_id = form.data.get('app_config', None)
+        else:
+            app_config_id = self._get_appconfig_id(request)
+        return NewsBlogConfig.objects.get(id=app_config_id)
+
+    def _get_appconfig_id(self, request):
+        if 'app_config' in request.GET:
+            if request.user.is_superuser or request.user.blog_sections.filter(id=request.GET['app_config']).exists():
+                return request.GET['app_config']
+        elif self._article_instance and self._article_instance.app_config:
+            return self._article_instance.app_config.id
+        else:
+            app_config = request.user.blog_sections.order_by('id').first()
+            if not app_config and request.user.is_superuser:
+                app_config = NewsBlogConfig.objects.filter(site=request.site).order_by('id').first()
+            if app_config:
+                return app_config.id
+        raise PermissionDenied()
 
     def add_view(self, request, *args, **kwargs):
         data = request.GET.copy()
@@ -187,48 +219,21 @@ class ArticleAdmin(
         request.GET = data
         return super().add_view(request, *args, **kwargs)
 
-    def save_model(self, request, obj, form, change):
-        app_config = self._get_appconfig(request, form)
-        if app_config:
-            obj.app_config = app_config
-        return super().save_model(request, obj, form, change)
-
-    def _get_appconfig(self, request, form):
-        app_config_pk = None
-        if 'app_config' in form.data.keys():
-            app_config_pk = form.data.get('app_config', None)
-        elif 'app_config' in request.GET.keys():
-            app_config_pk = request.GET.get('app_config', None)
-
-        app_config = None
-        if app_config_pk:
-            try:
-                app_config = NewsBlogConfig.objects.get(pk=app_config_pk)
-            except NewsBlogConfig.DoesNotExist:
-                pass
-
-        return app_config
-
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if not request.user.is_superuser:
-            if db_field.name == "app_config":
-                kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
+        if db_field.name == "app_config":
+            if request.user.is_superuser:
+                qs = NewsBlogConfig.objects.filter(site=request.site)
+            else:
+                qs = request.user.blog_sections.filter(site=request.site)
+            kwargs["queryset"] = qs
+            kwargs["initial"] = NewsBlogConfig.objects.get(id=self._get_appconfig_id(request))
         if db_field.name == "author_override":
             self._limit_author_queryset(request, kwargs)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def _limit_author_queryset(self, request, kwargs):
-        app_config_id = self._get_app_config_id(request)
-        if app_config_id:
-            kwargs["queryset"] = models.Author.objects.filter(app_config_id=app_config_id)
-        else:
-            kwargs["queryset"] = models.Author.objects.filter(app_config__site=request.site)
-
-    def _get_app_config_id(self, request):
-        if self._article_instance and self._article_instance.app_config:
-            return self._article_instance.app_config.id
-        elif 'app_config' in request.GET:
-            return request.GET['app_config']
+        app_config_id = self._get_appconfig_id(request)
+        kwargs["queryset"] = models.Author.objects.filter(app_config_id=app_config_id)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "categories":
@@ -238,24 +243,18 @@ class ArticleAdmin(
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def _limit_categories_queryset(self, request, kwargs):
-        app_config_id = self._get_app_config_id(request)
-        if app_config_id:
-            kwargs['queryset'] = Category.objects.filter(newsblog_config_id=app_config_id)
-        else:
-            kwargs['queryset'] = Category.objects.filter(newsblog_config__site=request.site)
+        app_config_id = self._get_appconfig_id(request)
+        kwargs['queryset'] = Category.objects.filter(newsblog_config_id=app_config_id)
 
     def _limit_article_tags_queryset(self, request, kwargs):
-        app_config_id = self._get_app_config_id(request)
-        if app_config_id:
-            kwargs['queryset'] = ArticleTag.objects.filter(newsblog_config_id=app_config_id)
-        else:
-            kwargs['queryset'] = ArticleTag.objects.filter(newsblog_config__site=request.site)
+        app_config_id = self._get_appconfig_id(request)
+        kwargs['queryset'] = ArticleTag.objects.filter(newsblog_config_id=app_config_id)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        return qs.filter(app_config__site=request.site)
+        return qs.filter(app_config__in=request.user.blog_sections.all())
 
     def get_fieldsets(self, request, obj):
         fieldsets = list(super().get_fieldsets(request, obj))
@@ -294,7 +293,7 @@ class NewsBlogConfigAdmin(
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        return qs.filter(site=request.site)
+        return qs.filter(site=request.site, pk__in=request.user.blog_sections.all().values_list('pk', flat=True))
 
     def save_model(self, request, obj, form, change):
         if not request.POST.get('site', None):
@@ -312,6 +311,18 @@ class NewsBlogConfigAdmin(
 admin.site.register(NewsBlogConfig, NewsBlogConfigAdmin)
 
 
+class BlogSectionInline(admin.TabularInline):
+    model = NewsBlogConfig.users.through
+    extra = 1
+
+
+class BlogUserAdminBase:
+    """
+    To be inherited in a model extending the user admin
+    """
+    inlines = (BlogSectionInline,)
+
+
 class AuthorAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',), }
 
@@ -319,7 +330,16 @@ class AuthorAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        return qs.filter(app_config__site=request.site)
+        return qs.filter(app_config__site=request.site, app_config__in=request.user.blog_sections.all())
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "app_config":
+            if request.user.is_superuser:
+                qs = NewsBlogConfig.objects.filter(site=request.site)
+            else:
+                qs = request.user.blog_sections.filter(site=request.site)
+            kwargs["queryset"] = qs
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ArticleTagAdmin(TranslatableAdmin):
@@ -335,16 +355,19 @@ class ArticleTagAdmin(TranslatableAdmin):
     )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if not request.user.is_superuser:
-            if db_field.name == "newsblog_config":
-                kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
+        if db_field.name == "newsblog_config":
+            if request.user.is_superuser:
+                qs = NewsBlogConfig.objects.filter(site=request.site)
+            else:
+                qs = request.user.blog_sections.filter(site=request.site)
+            kwargs["queryset"] = qs
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        return qs.filter(newsblog_config__site=request.site)
+        return qs.filter(newsblog_config__in=request.user.blog_sections.all(), newsblog__site=request.site)
 
 
 admin.site.register(models.Author, AuthorAdmin)

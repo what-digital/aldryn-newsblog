@@ -4,9 +4,8 @@ from __future__ import unicode_literals
 
 import datetime
 from collections import Counter
-from operator import attrgetter
-
 from django.db import models
+from django.db.models import Count
 from django.utils.timezone import now
 
 from aldryn_apphooks_config.managers.base import ManagerMixin, QuerySetMixin
@@ -104,8 +103,11 @@ class RelatedManager(ManagerMixin, TranslatableManager):
             # return empty iterable early not to perform useless requests
             return []
 
-        return ArticleTag.objects.annotate(
+        article_tags = ArticleTag.objects.annotate(
             article_count=Count(
                 'article', filter=Q(article__in=articles)
             )
         ).filter(article_count__gt=0).order_by('-article_count')
+
+        if not request.user.is_superuser:
+            article_tags = article_tags.filter(newsblog_config__in=request.user.blog_sections.all())

@@ -8,6 +8,7 @@ from datetime import datetime
 from aldryn_apphooks_config.mixins import AppConfigMixin
 from aldryn_people.models import Person
 from dateutil.relativedelta import relativedelta
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import Http404
 from django.http import HttpResponsePermanentRedirect
@@ -93,7 +94,15 @@ class AppHookCheckMixin(object):
         return qs.translated(*self.valid_languages)
 
 
-class ArticleDetail(AppConfigMixin, AppHookCheckMixin, PreviewModeMixin,
+class BlogSectionMixin(object):
+    def dispatch(self, request, *args, **kwargs):
+        app_config = getattr(self, 'config', None)
+        if app_config and not request.user.blog_sections.filter(id=app_config.id).exists():
+            raise PermissionDenied('You do not have access to this blog section.')
+        return super().dispatch(request, *args, **kwargs)
+
+
+class ArticleDetail(AppConfigMixin, AppHookCheckMixin, PreviewModeMixin, BlogSectionMixin,
                     TranslatableSlugMixin, TemplatePrefixMixin, DetailView):
     model = Article
     slug_field = 'slug'
@@ -190,7 +199,7 @@ class ArticleDetail(AppConfigMixin, AppHookCheckMixin, PreviewModeMixin,
 
 
 class ArticleListBase(AppConfigMixin, AppHookCheckMixin, TemplatePrefixMixin,
-                      PreviewModeMixin, ViewUrlMixin, ListView):
+                      PreviewModeMixin, ViewUrlMixin, BlogSectionMixin, ListView):
     model = Article
     show_header = False
 
@@ -243,7 +252,7 @@ class ArticleList(ArticleListBase):
         # plugin on the list view page without duplicate entries in page qs.
         exclude_count = self.config.exclude_featured
         if exclude_count:
-            featured_qs = Article.objects.all().filter(is_featured=True)
+            featured_qs = qs.filter(is_featured=True)
             if not self.edit_mode:
                 featured_qs = featured_qs.published()
             exclude_featured = list(featured_qs.values_list('pk', flat=True))[:exclude_count]

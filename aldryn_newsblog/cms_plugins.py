@@ -30,6 +30,15 @@ class TemplatePrefixMixin(object):
 class NewsBlogPlugin(TemplatePrefixMixin, CMSPluginBase):
     module = 'News & Blog'
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "app_config":
+            if request.user.is_superuser:
+                qs = NewsBlogConfig.objects.filter(site=request.site)
+            else:
+                qs = request.user.blog_sections.filter(site=request.site)
+            kwargs["queryset"] = qs
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 class AdjustableCacheMixin(object):
     """
@@ -128,11 +137,6 @@ class NewsBlogCategoriesPlugin(NewsBlogPlugin):
             '{0}:article-list'.format(instance.app_config.namespace),
             default=None)
         return context
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "app_config":
-            kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @plugin_pool.register_plugin

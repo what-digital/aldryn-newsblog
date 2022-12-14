@@ -18,16 +18,19 @@ class CategoryAdmin(TranslatableAdmin):
     )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if not request.user.is_superuser:
-            if db_field.name == "newsblog_config":
-                kwargs["queryset"] = NewsBlogConfig.objects.filter(site=request.site)
+        if db_field.name == "newsblog_config":
+            if request.user.is_superuser:
+                qs = NewsBlogConfig.objects.filter(site=request.site)
+            else:
+                qs = request.user.blog_sections.filter(site=request.site)
+            kwargs["queryset"] = qs
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        return qs.filter(newsblog_config__site=request.site)
+        return qs.filter(newsblog_config__in=request.user.blog_sections.filter(site=request.site))
 
 
 admin.site.register(Category, CategoryAdmin)
