@@ -97,7 +97,10 @@ class AppHookCheckMixin(object):
 class BlogSectionMixin(object):
     def dispatch(self, request, *args, **kwargs):
         app_config = getattr(self, 'config', None)
-        if app_config and not request.user.blog_sections.filter(id=app_config.id).exists():
+        if app_config and (
+            not request.user.is_superuser
+            and not request.user.blog_sections.filter(id=app_config.id).exists()
+        ):
             raise PermissionDenied('You do not have access to this blog section.')
         return super().dispatch(request, *args, **kwargs)
 
