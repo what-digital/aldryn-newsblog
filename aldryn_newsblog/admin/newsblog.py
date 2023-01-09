@@ -208,10 +208,16 @@ class ArticleAdmin(
         else:
             app_config = request.user.blog_sections.order_by('id').first()
             if not app_config and request.user.is_superuser:
-                app_config = NewsBlogConfig.objects.filter(site=request.site).order_by('id').first()
+                app_config = self.get_first_available_app_config(request)
             if app_config:
                 return app_config.id
         raise PermissionDenied()
+
+    def get_first_available_app_config(self, request):
+        app_config = NewsBlogConfig.objects.filter(site=request.site).order_by('id').first()
+        if not app_config:
+            app_config = NewsBlogConfig.objects.all().order_by('id').first()
+        return app_config
 
     def add_view(self, request, *args, **kwargs):
         data = request.GET.copy()
@@ -222,9 +228,9 @@ class ArticleAdmin(
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "app_config":
             if request.user.is_superuser:
-                qs = NewsBlogConfig.objects.filter(site=request.site)
+                qs = NewsBlogConfig.objects.all()
             else:
-                qs = request.user.blog_sections.filter(site=request.site)
+                qs = request.user.blog_sections.all()
             kwargs["queryset"] = qs
             kwargs["initial"] = NewsBlogConfig.objects.get(id=self._get_appconfig_id(request))
         if db_field.name == "author_override":
@@ -293,7 +299,7 @@ class NewsBlogConfigAdmin(
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        return qs.filter(site=request.site, pk__in=request.user.blog_sections.all().values_list('pk', flat=True))
+        return qs.filter(pk__in=request.user.blog_sections.all().values_list('pk', flat=True))
 
     def save_model(self, request, obj, form, change):
         if not request.POST.get('site', None):
@@ -330,14 +336,14 @@ class AuthorAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        return qs.filter(app_config__site=request.site, app_config__in=request.user.blog_sections.all())
+        return qs.filter(app_config__in=request.user.blog_sections.all())
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "app_config":
             if request.user.is_superuser:
-                qs = NewsBlogConfig.objects.filter(site=request.site)
+                qs = NewsBlogConfig.objects.all()
             else:
-                qs = request.user.blog_sections.filter(site=request.site)
+                qs = request.user.blog_sections.all()
             kwargs["queryset"] = qs
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -357,9 +363,9 @@ class ArticleTagAdmin(TranslatableAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "newsblog_config":
             if request.user.is_superuser:
-                qs = NewsBlogConfig.objects.filter(site=request.site)
+                qs = NewsBlogConfig.objects.all()
             else:
-                qs = request.user.blog_sections.filter(site=request.site)
+                qs = request.user.blog_sections.all()
             kwargs["queryset"] = qs
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -367,7 +373,7 @@ class ArticleTagAdmin(TranslatableAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        return qs.filter(newsblog_config__in=request.user.blog_sections.all(), newsblog__site=request.site)
+        return qs.filter(newsblog_config__in=request.user.blog_sections.all())
 
 
 admin.site.register(models.Author, AuthorAdmin)

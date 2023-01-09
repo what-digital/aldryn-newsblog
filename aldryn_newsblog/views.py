@@ -53,8 +53,19 @@ class EditModeMixin(object):
 
     def dispatch(self, request, *args, **kwargs):
         self.edit_mode = (
-            self.request.toolbar and toolbar_edit_mode_active(self.request))
+            self.request.toolbar and toolbar_edit_mode_active(self.request) and not self.is_user_limited(request)
+        )
         return super(EditModeMixin, self).dispatch(request, *args, **kwargs)
+
+    def is_user_limited(self, request):
+        """User is limited if they are not a superuser and do not have the blog section assigned to them."""
+        app_config = getattr(self, 'config', None)
+        if app_config and (
+            not request.user.is_superuser
+            and not request.user.blog_sections.filter(id=app_config.id).exists()
+        ):
+            return True
+        return False
 
 
 class PreviewModeMixin(EditModeMixin):
@@ -94,19 +105,9 @@ class AppHookCheckMixin(object):
         return qs.translated(*self.valid_languages)
 
 
-class BlogSectionMixin(object):
-    def dispatch(self, request, *args, **kwargs):
-        app_config = getattr(self, 'config', None)
-        if app_config and (
-            not request.user.is_superuser
-            and not request.user.blog_sections.filter(id=app_config.id).exists()
-        ):
-            raise PermissionDenied('You do not have access to this blog section.')
-        return super().dispatch(request, *args, **kwargs)
-
-
-class ArticleDetail(AppConfigMixin, AppHookCheckMixin, PreviewModeMixin, BlogSectionMixin,
-                    TranslatableSlugMixin, TemplatePrefixMixin, DetailView):
+class ArticleDetail(
+    AppConfigMixin, AppHookCheckMixin, PreviewModeMixin, TranslatableSlugMixin, TemplatePrefixMixin, DetailView
+):
     model = Article
     slug_field = 'slug'
     year_url_kwarg = 'year'
@@ -201,8 +202,9 @@ class ArticleDetail(AppConfigMixin, AppHookCheckMixin, PreviewModeMixin, BlogSec
             return None
 
 
-class ArticleListBase(AppConfigMixin, AppHookCheckMixin, TemplatePrefixMixin,
-                      PreviewModeMixin, ViewUrlMixin, BlogSectionMixin, ListView):
+class ArticleListBase(
+    AppConfigMixin, AppHookCheckMixin, TemplatePrefixMixin, PreviewModeMixin, ViewUrlMixin, ListView
+):
     model = Article
     show_header = False
 

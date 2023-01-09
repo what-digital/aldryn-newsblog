@@ -45,12 +45,15 @@ class NewsBlogArticleWizard(Wizard):
         :return: True if user has add permission, else False
         """
         # No one can create an Article, if there is no app_config yet.
-        num_configs = get_published_app_configs()
-        if not num_configs:
+        app_configs = get_published_app_configs()
+        if not app_configs:
             return False
 
         # Ensure user has permission to create articles.
-        if user.is_superuser or user.has_perm("aldryn_newsblog.add_article"):
+        app_config_ids = [app_config.id for app_config in app_configs]
+        if user.is_superuser or user.has_perm("aldryn_newsblog.add_article") and user.blog_sections.filter(
+            pk__in=app_config_ids
+        ).exists():
             return True
 
         # By default, no permission.
@@ -119,6 +122,28 @@ wizard_pool.register(newsblog_article_wizard)
 
 
 class CategoryWizard(Wizard):
+
+    def user_has_add_permission(self, user, **kwargs):
+        """
+        Return True if the current user has permission to add a category.
+        :param user: The current user
+        :param kwargs: Ignored here
+        :return: True if user has add permission, else False
+        """
+        # No one can create an Article, if there is no app_config yet.
+        app_configs = get_published_app_configs()
+        if not app_configs:
+            return False
+
+        # Ensure user has permission to create articles.
+        app_config_ids = [app_config.id for app_config in app_configs]
+        if user.is_superuser or user.has_perm("aldryn_newsblog.add_category") and user.blog_sections.filter(
+            pk__in=app_config_ids
+        ).exists():
+            return True
+
+        # By default, no permission.
+        return False
 
     def get_success_url(self, *args, **kwargs):
         # Since categories do not have their own urls, return None so that

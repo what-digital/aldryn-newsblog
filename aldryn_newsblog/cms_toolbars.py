@@ -56,7 +56,7 @@ class NewsBlogToolbar(CMSToolbar):
         except AttributeError:
             view_name = None
 
-        if user and view_name:
+        if user and view_name and (user.is_superuser or user.blog_sections.filter(id=config.id).exists()):
             language = get_language_from_request(self.request, check_path=True)
 
             # If we're on an Article detail page, then get the article
