@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.28 (2023-01-13)
+=====================
+
+* Add write permissions limitations for users per blog section
+
+
 2.2.3.27 (2022-09-01)
 =====================
 
