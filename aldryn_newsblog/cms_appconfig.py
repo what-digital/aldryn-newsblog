@@ -152,7 +152,7 @@ class NewsBlogConfig(TranslatableModel, AppHookConfig):
         related_name='aldryn_newsblog_detail_footer',
     )
 
-    users = models.ManyToManyField(User, related_name='blog_sections', blank=True, null=True)
+    users = models.ManyToManyField(User, related_name='blog_sections', blank=True)
 
     @staticmethod
     def has_placeholder_change_permission(user) -> bool:

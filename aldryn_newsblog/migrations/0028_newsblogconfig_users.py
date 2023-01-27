@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='newsblogconfig',
             name='users',
-            field=models.ManyToManyField(blank=True, null=True, related_name='blog_sections', to=settings.AUTH_USER_MODEL),
+            field=models.ManyToManyField(blank=True, related_name='blog_sections', to=settings.AUTH_USER_MODEL),
         ),
     ]
