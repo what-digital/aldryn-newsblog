@@ -1,11 +1,15 @@
 Changelog
 =========
 
+2.2.3.29 (2023-01-27)
+=====================
+
+* Fix warning after model changes from 2.2.3.28
+
 2.2.3.28 (2023-01-13)
 =====================
 
 * Add write permissions limitations for users per blog section
-
 
 2.2.3.27 (2022-09-01)
 =====================
