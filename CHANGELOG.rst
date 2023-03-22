@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.3.30 (2023-03-22)
+=====================
+
+* Fix problem with a clean migration that was not correctly respecting migration dependencies
+* Fix missing import in backwards migration
+
 2.2.3.29 (2023-01-27)
 =====================
 
