@@ -40,6 +40,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('aldryn_newsblog', '0026_auto_20211130_2341'),
+        ('filer', '0012_file_mime_type'),
     ]
 
     operations = [
