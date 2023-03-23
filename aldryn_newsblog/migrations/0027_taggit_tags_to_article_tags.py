@@ -29,7 +29,7 @@ def populate_article_tags_from_taggit_tags():
 
 
 def remove_all_article_tags(apps, schema_editor):
-    from aldryn_newsblog.models import ArticleTag
+    from aldryn_newsblog.models import Article, ArticleTag
 
     for article in Article.objects.all():
         article.article_tags.clear()
@@ -40,6 +40,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('aldryn_newsblog', '0026_auto_20211130_2341'),
+        ('filer', '0012_file_mime_type'),
     ]
 
     operations = [
