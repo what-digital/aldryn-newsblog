@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-
-from aldryn_translation_tools.sitemaps import I18NSitemap
+from cms.utils import get_current_site
+from cms.utils.i18n import get_public_languages
+from django.contrib.sitemaps import Sitemap
 
 from ..models import Article
 
 
-class NewsBlogSitemap(I18NSitemap):
+class NewsBlogSitemap(Sitemap):
 
     changefreq = "never"
     priority = 0.5
@@ -17,9 +17,9 @@ class NewsBlogSitemap(I18NSitemap):
         super(NewsBlogSitemap, self).__init__(*args, **kwargs)
 
     def items(self):
-        qs = Article.objects.published()
-        if self.language is not None:
-            qs = qs.translated(self.language)
+        site = get_current_site()
+        languages = get_public_languages(site_id=site.pk)
+        qs = Article.objects.published().filter(translations__language_code__in=languages).distinct()
         if self.namespace is not None:
             qs = qs.filter(app_config__namespace=self.namespace)
         return qs
