@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.2.3.32 (2023-05-11)
+=====================
+
+* Limited sitemap items to articles of sections of current site
+
 2.2.3.31 (2023-04-24)
 =====================
 

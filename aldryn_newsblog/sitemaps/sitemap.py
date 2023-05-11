@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from cms.utils import get_current_site
 from cms.utils.i18n import get_public_languages
+from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 
 from ..models import Article
@@ -17,9 +17,11 @@ class NewsBlogSitemap(Sitemap):
         super(NewsBlogSitemap, self).__init__(*args, **kwargs)
 
     def items(self):
-        site = get_current_site()
-        languages = get_public_languages(site_id=site.pk)
-        qs = Article.objects.published().filter(translations__language_code__in=languages).distinct()
+        site_id = getattr(settings, 'SITE_ID', None)
+        languages = get_public_languages(site_id=site_id)
+        qs = Article.objects.published().filter(
+            translations__language_code__in=languages, app_config__site_id=site_id
+        ).distinct()
         if self.namespace is not None:
             qs = qs.filter(app_config__namespace=self.namespace)
         return qs
