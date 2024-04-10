@@ -14,6 +14,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.utils.html import escape
 
+from cms.models import Title
 from cms.models.fields import PlaceholderField
 from cms.models.pluginmodel import CMSPlugin
 from cms.utils.i18n import get_current_language, get_redirect_on_fallback
@@ -279,6 +280,17 @@ class Article(TranslatedAutoSlugifyMixin,
                 _("You must specify either AUTHOR or AUTHOR (DJANGO CMS USER)."),
                 code='missing'
             )
+
+    def _slug_exists(self, slug, slug_filter=None, qs=None):
+        """
+        Overriding TranslatedAutoSlugifyMixin
+        _slug_exists method to account for CMS pages slugs.
+        """
+        return super()._slug_exists(slug, slug_filter, qs) or self.cms_page_exists(slug)
+
+    def cms_page_exists(self, slug):
+        return Title.objects.filter(slug=slug, language=get_current_language()).exists()
+
 
     def add_tag(self, tag_slug, tag_name=None):
         cleaned_slug = slugify(tag_slug)

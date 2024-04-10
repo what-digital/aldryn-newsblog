@@ -122,7 +122,10 @@ class ArticleDetail(
         NewsBlogConfig.
         """
         if not hasattr(self, 'object'):
-            self.object = self.get_object()
+            try:
+                self.object = self.get_object()
+            except:
+                return self.match_cms_url(request, *args, **kwargs)
         set_language_changer(request, self.object.get_absolute_url)
         url = self.object.get_absolute_url()
         if self.config.non_permalink_handling == 200 or request.path == url:
@@ -200,6 +203,16 @@ class ArticleDetail(
             return next_objs[0]
         else:
             return None
+
+    def match_cms_url(self, request, *args, **kwargs):
+        from cms.urls import urlpatterns as cms_urlpatterns
+        from django.urls import URLPattern
+
+        for pattern in cms_urlpatterns:
+            if isinstance(pattern, URLPattern):
+                match = pattern.resolve(request.path_info)
+                if match:
+                    return match.func(request, *args, **kwargs)
 
 
 class ArticleListBase(
